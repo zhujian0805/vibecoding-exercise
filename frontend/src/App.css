@@ -639,6 +639,63 @@
   text-align: left;
   border-bottom: 2px solid #e9ecef;
   white-space: nowrap;
+  vertical-align: middle;
+  position: relative;
+}
+
+.repositories-table th.sorted {
+  background: #e3f2fd;
+  border-bottom-color: #4285f4;
+}
+
+.repositories-table th.sorted .sortable-header {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+/* Sortable Header Styles */
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 24px;
+  outline: none;
+}
+
+.sortable-header:hover,
+.sortable-header:focus {
+  background: #e9ecef !important;
+  color: #343a40;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.sortable-header:focus {
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.5);
+}
+
+.sort-icon {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sort-icon.active {
+  opacity: 1;
+  color: #4285f4;
+  font-weight: bold;
+}
+
+.sortable-header:hover .sort-icon,
+.sortable-header:focus .sort-icon {
+  opacity: 1;
 }
 
 .repositories-table td {

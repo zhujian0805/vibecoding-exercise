@@ -33,15 +33,23 @@ interface RepositoriesResponse {
   total_count: number;
 }
 
+type SortField = 'name' | 'language' | 'stargazers_count' | 'forks_count' | 'size' | 'updated_at';
+type SortDirection = 'asc' | 'desc';
+
 const API_BASE_URL = 'http://localhost:5000';
 
 const Repositories: React.FC = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [originalRepositories, setOriginalRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('updated');
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const [currentSort, setCurrentSort] = useState<{ field: SortField | null; direction: SortDirection }>({
+    field: null,
+    direction: 'asc'
+  });
 
   useEffect(() => {
     fetchRepositories();
@@ -56,6 +64,9 @@ const Repositories: React.FC = () => {
         { withCredentials: true }
       );
       setRepositories(response.data.repositories);
+      setOriginalRepositories(response.data.repositories);
+      // Reset client-side sorting when fetching new data
+      setCurrentSort({ field: null, direction: 'asc' });
     } catch (err) {
       setError('Failed to fetch repositories');
       console.error('Error fetching repositories:', err);
@@ -100,6 +111,70 @@ const Repositories: React.FC = () => {
       Shell: '#89e051',
     };
     return colors[language] || '#586069';
+  };
+
+  // Handle table column sorting
+  const handleSort = (field: SortField) => {
+    let direction: SortDirection = 'asc';
+    
+    // Toggle direction if clicking the same field
+    if (currentSort.field === field && currentSort.direction === 'asc') {
+      direction = 'desc';
+    }
+
+    const sortedRepos = [...repositories].sort((a, b) => {
+      let aValue: any = a[field];
+      let bValue: any = b[field];
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return direction === 'asc' ? 1 : -1;
+      if (bValue == null) return direction === 'asc' ? -1 : 1;
+
+      // Special handling for different field types
+      switch (field) {
+        case 'name':
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+          break;
+        case 'language':
+          aValue = aValue ? aValue.toLowerCase() : '';
+          bValue = bValue ? bValue.toLowerCase() : '';
+          break;
+        case 'updated_at':
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+          break;
+        case 'stargazers_count':
+        case 'forks_count':
+        case 'size':
+          aValue = Number(aValue) || 0;
+          bValue = Number(bValue) || 0;
+          break;
+      }
+
+      let comparison = 0;
+      if (aValue > bValue) {
+        comparison = 1;
+      } else if (aValue < bValue) {
+        comparison = -1;
+      }
+
+      return direction === 'desc' ? -comparison : comparison;
+    });
+
+    setRepositories(sortedRepos);
+    setCurrentSort({ field, direction });
+  };
+
+  // Get sort icon for table headers
+  const getSortIcon = (field: SortField) => {
+    if (currentSort.field !== field) {
+      return <span className="sort-icon">↕</span>;
+    }
+    return currentSort.direction === 'asc' ? 
+      <span className="sort-icon active">↑</span> : 
+      <span className="sort-icon active">↓</span>;
   };
 
   if (loading) {
@@ -162,14 +237,90 @@ const Repositories: React.FC = () => {
           <table className="repositories-table">
             <thead>
               <tr>
-                <th>Repository</th>
-                <th>Description</th>
-                <th>Lang</th>
-                <th>⭐</th>
-                <th>🍴</th>
-                <th>Size</th>
-                <th>Updated</th>
-                <th>Actions</th>
+                <th className={`repo-name-cell ${currentSort.field === 'name' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('name')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('name')}
+                    title="Click to sort by repository name"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>Repository</span>
+                    {getSortIcon('name')}
+                  </div>
+                </th>
+                <th className="repo-description-cell">
+                  <span>Description</span>
+                </th>
+                <th className={`language-cell ${currentSort.field === 'language' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('language')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('language')}
+                    title="Click to sort by language"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>Lang</span>
+                    {getSortIcon('language')}
+                  </div>
+                </th>
+                <th className={`stars-cell ${currentSort.field === 'stargazers_count' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('stargazers_count')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('stargazers_count')}
+                    title="Click to sort by stars"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>⭐</span>
+                    {getSortIcon('stargazers_count')}
+                  </div>
+                </th>
+                <th className={`forks-cell ${currentSort.field === 'forks_count' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('forks_count')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('forks_count')}
+                    title="Click to sort by forks"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>🍴</span>
+                    {getSortIcon('forks_count')}
+                  </div>
+                </th>
+                <th className={`size-cell ${currentSort.field === 'size' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('size')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('size')}
+                    title="Click to sort by size"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>Size</span>
+                    {getSortIcon('size')}
+                  </div>
+                </th>
+                <th className={`updated-cell ${currentSort.field === 'updated_at' ? 'sorted' : ''}`}>
+                  <div 
+                    className="sortable-header" 
+                    onClick={() => handleSort('updated_at')}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSort('updated_at')}
+                    title="Click to sort by last updated"
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <span>Updated</span>
+                    {getSortIcon('updated_at')}
+                  </div>
+                </th>
+                <th className="actions-cell">
+                  <span>Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
