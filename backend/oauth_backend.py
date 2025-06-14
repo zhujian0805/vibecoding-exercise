@@ -118,6 +118,74 @@ def profile():
     else:
         return jsonify({'error': f'Failed to fetch user information from GitHub'}), user_response.status_code
 
+@app.route('/api/repositories')
+def repositories():
+    # Check if user is logged in
+    if 'user' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Get access token from session
+    access_token = session.get('access_token')
+    if not access_token:
+        return jsonify({'error': 'No access token'}), 401
+    
+    # Fetch repositories from GitHub API
+    headers = {
+        'Authorization': f'token {access_token}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
+    
+    # Get repositories with pagination support
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 30, type=int)
+    sort = request.args.get('sort', 'updated')  # updated, created, pushed, full_name
+    
+    repos_response = requests.get(
+        f'https://api.github.com/user/repos?page={page}&per_page={per_page}&sort={sort}', 
+        headers=headers
+    )
+    
+    if repos_response.status_code == 200:
+        repos_data = repos_response.json()
+        
+        # Extract relevant repository information
+        repositories = []
+        for repo in repos_data:
+            repo_info = {
+                'id': repo.get('id'),
+                'name': repo.get('name'),
+                'full_name': repo.get('full_name'),
+                'description': repo.get('description'),
+                'private': repo.get('private'),
+                'html_url': repo.get('html_url'),
+                'clone_url': repo.get('clone_url'),
+                'ssh_url': repo.get('ssh_url'),
+                'language': repo.get('language'),
+                'stargazers_count': repo.get('stargazers_count'),
+                'watchers_count': repo.get('watchers_count'),
+                'forks_count': repo.get('forks_count'),
+                'size': repo.get('size'),
+                'default_branch': repo.get('default_branch'),
+                'created_at': repo.get('created_at'),
+                'updated_at': repo.get('updated_at'),
+                'pushed_at': repo.get('pushed_at'),
+                'archived': repo.get('archived'),
+                'disabled': repo.get('disabled'),
+                'fork': repo.get('fork'),
+                'topics': repo.get('topics', []),
+                'visibility': repo.get('visibility')
+            }
+            repositories.append(repo_info)
+        
+        return jsonify({
+            'repositories': repositories,
+            'page': page,
+            'per_page': per_page,
+            'total_count': len(repositories)
+        })
+    else:
+        return jsonify({'error': f'Failed to fetch repositories from GitHub'}), repos_response.status_code
+
 # Health check endpoint
 @app.route('/api/health')
 def health():
