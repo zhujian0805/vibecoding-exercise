@@ -2,6 +2,8 @@ from flask import Flask, redirect, url_for, session, request, jsonify
 from flask_cors import CORS
 import os
 import requests
+from github import Github
+from github.GithubException import GithubException
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key')
@@ -31,8 +33,11 @@ def login():
     # Return the GitHub OAuth URL for the frontend to redirect to
     # The callback URL should point to the backend API
     callback_url = CALLBACK_URL
+    # Include repo scope to access all repositories (public and private)
+    # read:user for user profile, repo for repository access
+    scope = "read:user repo"
     return jsonify({
-        'auth_url': f"{GITHUB_AUTH_URL}?client_id={GITHUB_CLIENT_ID}&scope=read:user&redirect_uri={callback_url}"
+        'auth_url': f"{GITHUB_AUTH_URL}?client_id={GITHUB_CLIENT_ID}&scope={scope}&redirect_uri={callback_url}"
     })
 
 @app.route('/api/callback')
@@ -56,17 +61,30 @@ def callback():
     if not access_token:
         return redirect(f"{FRONTEND_URL}/login?error=token_failed")
     
-    # Get user info
-    user_resp = requests.get(
-        GITHUB_USER_API,
-        headers={'Authorization': f'token {access_token}'}
-    )
-    user_json = user_resp.json()
-    session['user'] = user_json
-    session['access_token'] = access_token
-    
-    # Redirect to React app after successful authentication
-    return redirect(f"{FRONTEND_URL}/")
+    try:
+        # Get user info using PyGithub
+        g = Github(access_token)
+        user = g.get_user()
+        
+        # Convert user info to dict for session storage
+        user_json = {
+            'login': user.login,
+            'id': user.id,
+            'name': user.name,
+            'email': user.email,
+            'avatar_url': user.avatar_url
+        }
+        
+        session['user'] = user_json
+        session['access_token'] = access_token
+        
+        # Redirect to React app after successful authentication
+        return redirect(f"{FRONTEND_URL}/")
+        
+    except GithubException as e:
+        return redirect(f"{FRONTEND_URL}/login?error=github_api_failed")
+    except Exception as e:
+        return redirect(f"{FRONTEND_URL}/login?error=user_fetch_failed")
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -84,39 +102,38 @@ def profile():
     if not access_token:
         return jsonify({'error': 'No access token'}), 401
     
-    # Fetch detailed user information from GitHub API
-    headers = {
-        'Authorization': f'token {access_token}',
-        'Accept': 'application/vnd.github.v3+json'
-    }
-    
-    user_response = requests.get('https://api.github.com/user', headers=headers)
-    
-    if user_response.status_code == 200:
-        user_data = user_response.json()
+    try:
+        # Initialize GitHub client with access token
+        g = Github(access_token)
+        
+        # Get authenticated user information
+        user = g.get_user()
         
         # Extract relevant user information
         user_info = {
-            'login': user_data.get('login'),
-            'name': user_data.get('name'),
-            'email': user_data.get('email'),
-            'avatar_url': user_data.get('avatar_url'),
-            'bio': user_data.get('bio'),
-            'location': user_data.get('location'),
-            'company': user_data.get('company'),
-            'blog': user_data.get('blog'),
-            'twitter_username': user_data.get('twitter_username'),
-            'public_repos': user_data.get('public_repos'),
-            'followers': user_data.get('followers'),
-            'following': user_data.get('following'),
-            'created_at': user_data.get('created_at'),
-            'updated_at': user_data.get('updated_at'),
-            'html_url': user_data.get('html_url')
+            'login': user.login,
+            'name': user.name,
+            'email': user.email,
+            'avatar_url': user.avatar_url,
+            'bio': user.bio,
+            'location': user.location,
+            'company': user.company,
+            'blog': user.blog,
+            'twitter_username': user.twitter_username,
+            'public_repos': user.public_repos,
+            'followers': user.followers,
+            'following': user.following,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+            'html_url': user.html_url
         }
         
         return jsonify(user_info)
-    else:
-        return jsonify({'error': f'Failed to fetch user information from GitHub'}), user_response.status_code
+        
+    except GithubException as e:
+        return jsonify({'error': f'GitHub API error: {e.data.get("message", str(e))}'}), e.status
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch user information: {str(e)}'}), 500
 
 @app.route('/api/repositories')
 def repositories():
@@ -129,62 +146,83 @@ def repositories():
     if not access_token:
         return jsonify({'error': 'No access token'}), 401
     
-    # Fetch repositories from GitHub API
-    headers = {
-        'Authorization': f'token {access_token}',
-        'Accept': 'application/vnd.github.v3+json'
-    }
-    
-    # Get repositories with pagination support
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 30, type=int)
-    sort = request.args.get('sort', 'updated')  # updated, created, pushed, full_name
-    
-    repos_response = requests.get(
-        f'https://api.github.com/user/repos?page={page}&per_page={per_page}&sort={sort}', 
-        headers=headers
-    )
-    
-    if repos_response.status_code == 200:
-        repos_data = repos_response.json()
+    try:
+        # Initialize GitHub client with access token
+        g = Github(access_token)
         
-        # Extract relevant repository information
-        repositories = []
-        for repo in repos_data:
-            repo_info = {
-                'id': repo.get('id'),
-                'name': repo.get('name'),
-                'full_name': repo.get('full_name'),
-                'description': repo.get('description'),
-                'private': repo.get('private'),
-                'html_url': repo.get('html_url'),
-                'clone_url': repo.get('clone_url'),
-                'ssh_url': repo.get('ssh_url'),
-                'language': repo.get('language'),
-                'stargazers_count': repo.get('stargazers_count'),
-                'watchers_count': repo.get('watchers_count'),
-                'forks_count': repo.get('forks_count'),
-                'size': repo.get('size'),
-                'default_branch': repo.get('default_branch'),
-                'created_at': repo.get('created_at'),
-                'updated_at': repo.get('updated_at'),
-                'pushed_at': repo.get('pushed_at'),
-                'archived': repo.get('archived'),
-                'disabled': repo.get('disabled'),
-                'fork': repo.get('fork'),
-                'topics': repo.get('topics', []),
-                'visibility': repo.get('visibility')
-            }
-            repositories.append(repo_info)
+        # Get authenticated user
+        user = g.get_user()
+        
+        # Get sort parameter
+        sort = request.args.get('sort', 'updated')
+        
+        all_repositories = []
+        seen_repo_ids = set()  # Track seen repositories to avoid duplicates
+        
+        # Get all repositories with different affiliation types
+        affiliations = ['owner', 'collaborator', 'organization_member']
+        
+        for affiliation in affiliations:
+            try:
+                # Get repositories for this affiliation type
+                repos = user.get_repos(
+                    visibility='all',
+                    affiliation=affiliation,
+                    sort=sort
+                )
+                
+                # Process all repositories for this affiliation
+                for repo in repos:
+                    # Check if we already have this repository (to avoid duplicates)
+                    if repo.id not in seen_repo_ids:
+                        seen_repo_ids.add(repo.id)
+                        
+                        repo_info = {
+                            'id': repo.id,
+                            'name': repo.name,
+                            'full_name': repo.full_name,
+                            'description': repo.description,
+                            'private': repo.private,
+                            'html_url': repo.html_url,
+                            'clone_url': repo.clone_url,
+                            'ssh_url': repo.ssh_url,
+                            'language': repo.language,
+                            'stargazers_count': repo.stargazers_count,
+                            'watchers_count': repo.watchers_count,
+                            'forks_count': repo.forks_count,
+                            'size': repo.size,
+                            'default_branch': repo.default_branch,
+                            'created_at': repo.created_at.isoformat() if repo.created_at else None,
+                            'updated_at': repo.updated_at.isoformat() if repo.updated_at else None,
+                            'pushed_at': repo.pushed_at.isoformat() if repo.pushed_at else None,
+                            'archived': repo.archived,
+                            'disabled': repo.disabled,
+                            'fork': repo.fork,
+                            'topics': list(repo.get_topics()) if hasattr(repo, 'get_topics') else [],
+                            'visibility': repo.visibility if hasattr(repo, 'visibility') else ('private' if repo.private else 'public'),
+                            'affiliation': affiliation,
+                            'owner': {
+                                'login': repo.owner.login,
+                                'type': repo.owner.type
+                            }
+                        }
+                        all_repositories.append(repo_info)
+                        
+            except GithubException as e:
+                # Log the error but continue with other affiliations
+                print(f"Warning: Failed to fetch {affiliation} repositories: {e.data.get('message', str(e))}")
+                continue
         
         return jsonify({
-            'repositories': repositories,
-            'page': page,
-            'per_page': per_page,
-            'total_count': len(repositories)
+            'repositories': all_repositories,
+            'total_count': len(all_repositories),
+            'fetched_all': True
         })
-    else:
-        return jsonify({'error': f'Failed to fetch repositories from GitHub'}), repos_response.status_code
+        
+    except GithubException as e:
+        return jsonify({'error': f'GitHub API error: {e.data.get("message", str(e))}'}), e.status
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch repositories: {str(e)}'}), 500
 
 # Health check endpoint
 @app.route('/api/health')
