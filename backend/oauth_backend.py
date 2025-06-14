@@ -163,8 +163,15 @@ def with_timeout(func, timeout_seconds=30):
 def get_user():
     user = session.get('user')
     if user:
-        return jsonify({'authenticated': True, 'user': user})
-    return jsonify({'authenticated': False}), 401
+        response_data = {'authenticated': True, 'user': user}
+        logger.debug(f"[DEBUG] get_user() returning data: {json.dumps(response_data, indent=2, default=str)}")
+        print(f"[DEBUG] get_user() return object: {json.dumps(response_data, indent=2, default=str)}")
+        return jsonify(response_data)
+    
+    response_data = {'authenticated': False}
+    logger.debug(f"[DEBUG] get_user() returning data (unauthenticated): {json.dumps(response_data, indent=2, default=str)}")
+    print(f"[DEBUG] get_user() return object (unauthenticated): {json.dumps(response_data, indent=2, default=str)}")
+    return jsonify(response_data), 401
 
 @app.route('/api/login')
 def login():
