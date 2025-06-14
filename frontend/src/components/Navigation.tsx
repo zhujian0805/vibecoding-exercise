@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 interface User {
   login: string;
@@ -43,6 +44,7 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
         
         {isAuthenticated && user && (
           <div className="nav-user">
+            <ThemeToggle />
             <img 
               src={user.avatar_url} 
               alt="Avatar" 
@@ -52,6 +54,12 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
             <button onClick={onLogout} className="logout-btn">
               Logout
             </button>
+          </div>
+        )}
+        
+        {!isAuthenticated && (
+          <div className="nav-actions">
+            <ThemeToggle />
           </div>
         )}
       </div>

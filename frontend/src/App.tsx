@@ -10,6 +10,7 @@ import LoginPage from './components/LoginPage';
 import UserProfile from './components/UserProfile';
 import Repositories from './components/Repositories';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 interface User {
   login: string;
@@ -145,63 +146,65 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <Router>
-        <Navigation 
-          isAuthenticated={authState.authenticated}
-          user={authState.user}
-          onLogout={handleLogout}
-        />
-        
-        <main className="main-content">
-          <Routes>
-            <Route 
-              path="/" 
-              element={
-                authState.authenticated ? (
-                  <HomePage user={authState.user} />
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              } 
-            />
-            <Route 
-              path="/login" 
-              element={
-                authState.authenticated ? (
-                  <Navigate to="/" replace />
-                ) : (
-                  <LoginPage 
-                    onLogin={handleLogin}
-                    error={authState.error}
-                    onClearError={clearError}
-                  />
-                )
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute isAuthenticated={authState.authenticated}>
-                  <UserProfile 
-                    user={authState.user}
-                    onRefreshProfile={fetchProfile}
-                  />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/repositories" 
-              element={
-                <ProtectedRoute isAuthenticated={authState.authenticated}>
-                  <Repositories />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
-        </main>
-      </Router>
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <Router>
+          <Navigation 
+            isAuthenticated={authState.authenticated}
+            user={authState.user}
+            onLogout={handleLogout}
+          />
+          
+          <main className="main-content">
+            <Routes>
+              <Route 
+                path="/" 
+                element={
+                  authState.authenticated ? (
+                    <HomePage user={authState.user} />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                } 
+              />
+              <Route 
+                path="/login" 
+                element={
+                  authState.authenticated ? (
+                    <Navigate to="/" replace />
+                  ) : (
+                    <LoginPage 
+                      onLogin={handleLogin}
+                      error={authState.error}
+                      onClearError={clearError}
+                    />
+                  )
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute isAuthenticated={authState.authenticated}>
+                    <UserProfile 
+                      user={authState.user}
+                      onRefreshProfile={fetchProfile}
+                    />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/repositories" 
+                element={
+                  <ProtectedRoute isAuthenticated={authState.authenticated}>
+                    <Repositories />
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </main>
+        </Router>
+      </div>
+    </ThemeProvider>
   );
 }
 
