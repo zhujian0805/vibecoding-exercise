@@ -164,9 +164,9 @@ const Repositories: React.FC = () => {
               <tr>
                 <th>Repository</th>
                 <th>Description</th>
-                <th>Language</th>
-                <th>Stars</th>
-                <th>Forks</th>
+                <th>Lang</th>
+                <th>⭐</th>
+                <th>🍴</th>
                 <th>Size</th>
                 <th>Updated</th>
                 <th>Actions</th>
@@ -230,11 +230,11 @@ const Repositories: React.FC = () => {
                   </td>
                   
                   <td className="stars-cell">
-                    <span className="stat-value">⭐ {repo.stargazers_count}</span>
+                    <span className="stat-value">{repo.stargazers_count}</span>
                   </td>
                   
                   <td className="forks-cell">
-                    <span className="stat-value">🍴 {repo.forks_count}</span>
+                    <span className="stat-value">{repo.forks_count}</span>
                   </td>
                   
                   <td className="size-cell">
@@ -265,7 +265,7 @@ const Repositories: React.FC = () => {
                         className="action-btn clone-btn"
                         title="Copy clone URL"
                       >
-                        Clone
+                        Copy
                       </button>
                     </div>
                   </td>
