@@ -1,0 +1,317 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.App-header {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+h1 {
+  margin-bottom: 2rem;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+/* Loading Styles */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error Styles */
+.error-message {
+  background: rgba(220, 53, 69, 0.9);
+  border: 1px solid #dc3545;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  position: relative;
+  max-width: 400px;
+  font-size: 1rem;
+}
+
+.error-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-close:hover {
+  opacity: 0.7;
+}
+
+/* Login Section */
+.login-section {
+  text-align: center;
+  max-width: 400px;
+}
+
+.login-section h2 {
+  margin-bottom: 1rem;
+  font-weight: 400;
+}
+
+.login-section p {
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+.github-login-btn {
+  background: #24292e;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.github-login-btn:hover {
+  background: #1a1e22;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Profile Section */
+.profile-section {
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.profile-info h2 {
+  margin: 0 0 0.5rem 0;
+  font-weight: 400;
+  font-size: 2rem;
+}
+
+.username {
+  margin: 0 0 1rem 0;
+  opacity: 0.8;
+  font-size: 1.2rem;
+}
+
+.bio {
+  margin: 0;
+  opacity: 0.9;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+/* Profile Details */
+.profile-details {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  font-size: 1rem;
+}
+
+.detail-row strong {
+  min-width: 100px;
+  opacity: 0.8;
+}
+
+.detail-row a {
+  color: #87ceeb;
+  text-decoration: none;
+}
+
+.detail-row a:hover {
+  text-decoration: underline;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 2rem 0;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat strong {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.stat span {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.actions button,
+.actions a {
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.refresh-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+}
+
+.refresh-btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+}
+
+.github-link-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+}
+
+.github-link-btn:hover {
+  background: #545b62;
+  transform: translateY(-2px);
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .App-header {
+    padding: 1rem;
+    font-size: calc(8px + 2vmin);
+  }
+
+  .profile-section {
+    padding: 1.5rem;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .detail-row strong {
+    min-width: auto;
+  }
+}
