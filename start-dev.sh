@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# GitHub OAuth Demo Launcher (Development Mode - Port 3000)
+# GitHub OAuth Demo Launcher (Development Mode - Port 80)
 
 echo "🚀 Starting GitHub OAuth Demo (Development Mode)..."
 echo "=================================================="
@@ -36,7 +36,7 @@ BACKEND_PID=$!
 sleep 3
 
 # Start frontend
-echo "⚛️  Starting React frontend on port 3000..."
+echo "⚛️  Starting React frontend on port 80..."
 cd /home/jzhu/projects/repos/learn-oauth-flow/frontend
 
 # Check if we need to install dependencies
@@ -45,15 +45,15 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Start frontend (will run on port 3000)
-PORT=3000 npm start &
+# Start frontend (will run on port 80)
+PORT=80 npm start &
 FRONTEND_PID=$!
 
 echo ""
 echo "🎉 Demo is starting up!"
 echo "==============================="
 echo "Backend:  http://localhost:5000"
-echo "Frontend: http://localhost:3000"
+echo "Frontend: http://localhost:80"
 echo ""
 echo "Press Ctrl+C to stop both servers"
 

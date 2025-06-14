@@ -204,14 +204,30 @@ def callback():
         g = Github(access_token)
         user = g.get_user()
         
-        # Convert user info to dict for session storage
+        # Convert full user info to dict for session storage
         user_json = {
             'login': user.login,
             'id': user.id,
             'name': user.name,
             'email': user.email,
-            'avatar_url': user.avatar_url
+            'avatar_url': user.avatar_url,
+            'bio': user.bio,
+            'location': user.location,
+            'company': user.company,
+            'blog': user.blog,
+            'twitter_username': user.twitter_username,
+            'public_repos': user.public_repos,
+            'followers': user.followers,
+            'following': user.following,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+            'html_url': user.html_url
         }
+        
+        logger.debug(f"OAuth callback - storing user data for {user.login}")
+        logger.debug(f"  public_repos: {user_json['public_repos']}")
+        logger.debug(f"  followers: {user_json['followers']}")
+        logger.debug(f"  following: {user_json['following']}")
         
         session['user'] = user_json
         session['access_token'] = access_token
@@ -273,6 +289,12 @@ def profile():
             'updated_at': user.updated_at.isoformat() if user.updated_at else None,
             'html_url': user.html_url
         }
+        
+        # Debug logging
+        logger.debug(f"Profile data for user {user.login}:")
+        logger.debug(f"  public_repos: {user_info['public_repos']} (type: {type(user_info['public_repos'])})")
+        logger.debug(f"  followers: {user_info['followers']} (type: {type(user_info['followers'])})")
+        logger.debug(f"  following: {user_info['following']} (type: {type(user_info['following'])})")
         
         return jsonify(user_info)
         

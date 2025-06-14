@@ -55,15 +55,45 @@ function App() {
     handleOAuthCallback();
   }, []);
 
+  const fetchProfile = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/profile`);
+      setAuthState(prev => ({
+        ...prev,
+        user: response.data
+      }));
+    } catch (error) {
+      setAuthState(prev => ({
+        ...prev,
+        error: 'Failed to fetch profile'
+      }));
+    }
+  };
+
   const checkAuthStatus = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/user`);
-      setAuthState({
-        authenticated: true,
-        user: response.data.user,
-        loading: false,
-        error: null
-      });
+      const userData = response.data.user;
+      
+      // Check if we have complete profile data (with statistics)
+      if (userData && typeof userData.public_repos === 'number') {
+        // We have complete data from session
+        setAuthState({
+          authenticated: true,
+          user: userData,
+          loading: false,
+          error: null
+        });
+      } else {
+        // Session data is incomplete, fetch full profile
+        setAuthState({
+          authenticated: true,
+          user: userData,
+          loading: false,
+          error: null
+        });
+        await fetchProfile();
+      }
     } catch (error) {
       setAuthState({
         authenticated: false,
@@ -111,21 +141,6 @@ function App() {
       setAuthState(prev => ({
         ...prev,
         error: 'Failed to logout'
-      }));
-    }
-  };
-
-  const fetchProfile = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/profile`);
-      setAuthState(prev => ({
-        ...prev,
-        user: response.data
-      }));
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        error: 'Failed to fetch profile'
       }));
     }
   };

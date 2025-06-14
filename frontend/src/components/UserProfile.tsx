@@ -27,6 +27,22 @@ interface UserProfileProps {
 const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => {
   const [loading, setLoading] = useState(false);
 
+  // Debug: Log user data to see what we're receiving
+  useEffect(() => {
+    if (user) {
+      console.log('User data received in UserProfile:', user);
+      console.log('Type of public_repos:', typeof user.public_repos, 'Value:', user.public_repos);
+      console.log('Type of followers:', typeof user.followers, 'Value:', user.followers);
+      console.log('Type of following:', typeof user.following, 'Value:', user.following);
+      
+      // Additional debug information
+      console.log('User object keys:', Object.keys(user));
+      console.log('All user values:', Object.entries(user));
+    } else {
+      console.log('No user data received in UserProfile');
+    }
+  }, [user]);
+
   const handleRefresh = async () => {
     setLoading(true);
     await onRefreshProfile();
@@ -94,18 +110,39 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => 
         )}
       </div>
 
-      <div className="stats">
-        <div className="stat">
-          <strong>{user.public_repos}</strong>
-          <span>Repositories</span>
-        </div>
-        <div className="stat">
-          <strong>{user.followers}</strong>
-          <span>Followers</span>
-        </div>
-        <div className="stat">
-          <strong>{user.following}</strong>
-          <span>Following</span>
+      <div className="stats-section">
+        <h3 className="stats-title">GitHub Statistics</h3>
+        <div className="stats">
+          <a 
+            href={`${user.html_url}?tab=repositories`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="stat"
+            title="View repositories on GitHub"
+          >
+            <strong>{(user.public_repos ?? 0).toLocaleString()}</strong>
+            <span>Repositories</span>
+          </a>
+          <a 
+            href={`${user.html_url}?tab=followers`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="stat"
+            title="View followers on GitHub"
+          >
+            <strong>{(user.followers ?? 0).toLocaleString()}</strong>
+            <span>Followers</span>
+          </a>
+          <a 
+            href={`${user.html_url}?tab=following`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="stat"
+            title="View following on GitHub"
+          >
+            <strong>{(user.following ?? 0).toLocaleString()}</strong>
+            <span>Following</span>
+          </a>
         </div>
       </div>
 

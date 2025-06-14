@@ -33,7 +33,7 @@ echo "📋 Configuration Summary:"
 echo "========================"
 echo "Expected callback URL: http://localhost:5000/api/callback"
 echo "Frontend URL (demo):   http://localhost (port 80)"
-echo "Frontend URL (dev):    http://localhost:3000"
+echo "Frontend URL (dev):    http://localhost:80"
 echo "Backend URL:           http://localhost:5000"
 
 echo ""
