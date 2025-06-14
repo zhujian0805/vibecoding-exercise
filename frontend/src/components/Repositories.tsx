@@ -41,6 +41,7 @@ const Repositories: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('updated');
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRepositories();
@@ -60,6 +61,18 @@ const Repositories: React.FC = () => {
       console.error('Error fetching repositories:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyCloneUrl = async (cloneUrl: string, repoName: string) => {
+    try {
+      await navigator.clipboard.writeText(cloneUrl);
+      setCopyMessage(`Clone URL copied for ${repoName}!`);
+      setTimeout(() => setCopyMessage(null), 3000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+      setCopyMessage('Failed to copy clone URL');
+      setTimeout(() => setCopyMessage(null), 3000);
     }
   };
 
@@ -115,6 +128,12 @@ const Repositories: React.FC = () => {
 
   return (
     <div className="repositories">
+      {copyMessage && (
+        <div className="copy-message">
+          {copyMessage}
+        </div>
+      )}
+      
       <div className="repositories-header">
         <h1>My Repositories</h1>
         <div className="repositories-controls">
@@ -134,80 +153,128 @@ const Repositories: React.FC = () => {
         </div>
       </div>
 
-      <div className="repositories-grid">
-        {repositories.length === 0 ? (
-          <div className="no-repositories">
-            <p>No repositories found.</p>
-          </div>
-        ) : (
-          repositories.map((repo) => (
-            <div key={repo.id} className="repository-card">
-              <div className="repo-header">
-                <h3>
-                  <a 
-                    href={repo.html_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="repo-name"
-                  >
-                    {repo.name}
-                  </a>
-                  {repo.private && <span className="private-badge">Private</span>}
-                  {repo.fork && <span className="fork-badge">Fork</span>}
-                </h3>
-              </div>
-              
-              {repo.description && (
-                <p className="repo-description">{repo.description}</p>
-              )}
-              
-              <div className="repo-stats">
-                {repo.language && (
-                  <span className="language">
-                    <span 
-                      className="language-color" 
-                      style={{ backgroundColor: getLanguageColor(repo.language) }}
-                    ></span>
-                    {repo.language}
-                  </span>
-                )}
-                <span className="stat">
-                  ⭐ {repo.stargazers_count}
-                </span>
-                <span className="stat">
-                  🍴 {repo.forks_count}
-                </span>
-                {repo.size > 0 && (
-                  <span className="stat">
-                    📦 {Math.round(repo.size / 1024)} KB
-                  </span>
-                )}
-              </div>
-              
-              {repo.topics && repo.topics.length > 0 && (
-                <div className="repo-topics">
-                  {repo.topics.slice(0, 3).map((topic) => (
-                    <span key={topic} className="topic-tag">
-                      {topic}
-                    </span>
-                  ))}
-                  {repo.topics.length > 3 && (
-                    <span className="topic-tag more">
-                      +{repo.topics.length - 3} more
-                    </span>
-                  )}
-                </div>
-              )}
-              
-              <div className="repo-footer">
-                <span className="updated-date">
-                  Updated {formatDate(repo.updated_at)}
-                </span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {repositories.length === 0 ? (
+        <div className="no-repositories">
+          <p>No repositories found.</p>
+        </div>
+      ) : (
+        <div className="repositories-table-container">
+          <table className="repositories-table">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Description</th>
+                <th>Language</th>
+                <th>Stars</th>
+                <th>Forks</th>
+                <th>Size</th>
+                <th>Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {repositories.map((repo) => (
+                <tr key={repo.id}>
+                  <td className="repo-name-cell">
+                    <div className="repo-name-container">
+                      <a 
+                        href={repo.html_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="repo-name-link"
+                      >
+                        {repo.name}
+                      </a>
+                      <div className="repo-badges">
+                        {repo.private && <span className="badge private">Private</span>}
+                        {repo.fork && <span className="badge fork">Fork</span>}
+                        {repo.archived && <span className="badge archived">Archived</span>}
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td className="repo-description-cell">
+                    <div className="description-content">
+                      {repo.description ? (
+                        <span className="description-text">{repo.description}</span>
+                      ) : (
+                        <span className="no-description">No description</span>
+                      )}
+                      {repo.topics && repo.topics.length > 0 && (
+                        <div className="topic-tags">
+                          {repo.topics.slice(0, 2).map((topic) => (
+                            <span key={topic} className="topic-tag">
+                              {topic}
+                            </span>
+                          ))}
+                          {repo.topics.length > 2 && (
+                            <span className="topic-tag more">
+                              +{repo.topics.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  
+                  <td className="language-cell">
+                    {repo.language && (
+                      <div className="language-info">
+                        <span 
+                          className="language-color" 
+                          style={{ backgroundColor: getLanguageColor(repo.language) }}
+                        ></span>
+                        <span className="language-name">{repo.language}</span>
+                      </div>
+                    )}
+                  </td>
+                  
+                  <td className="stars-cell">
+                    <span className="stat-value">⭐ {repo.stargazers_count}</span>
+                  </td>
+                  
+                  <td className="forks-cell">
+                    <span className="stat-value">🍴 {repo.forks_count}</span>
+                  </td>
+                  
+                  <td className="size-cell">
+                    {repo.size > 0 ? (
+                      <span className="stat-value">{Math.round(repo.size / 1024)} KB</span>
+                    ) : (
+                      <span className="no-data">—</span>
+                    )}
+                  </td>
+                  
+                  <td className="updated-cell">
+                    <span className="updated-date">{formatDate(repo.updated_at)}</span>
+                  </td>
+                  
+                  <td className="actions-cell">
+                    <div className="repo-actions">
+                      <a 
+                        href={repo.html_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="action-btn view-btn"
+                        title="View on GitHub"
+                      >
+                        View
+                      </a>
+                      <button 
+                        onClick={() => handleCopyCloneUrl(repo.clone_url, repo.name)}
+                        className="action-btn clone-btn"
+                        title="Copy clone URL"
+                      >
+                        Clone
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {repositories.length > 0 && (
         <div className="pagination">
