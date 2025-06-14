@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 interface Repository {
@@ -31,6 +31,10 @@ interface RepositoriesResponse {
   page: number;
   per_page: number;
   total_count: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  search_query: string;
 }
 
 type SortField = 'name' | 'language' | 'stargazers_count' | 'forks_count' | 'size' | 'updated_at';
@@ -40,31 +44,51 @@ const API_BASE_URL = 'http://localhost:5000';
 
 const Repositories: React.FC = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [originalRepositories, setOriginalRepositories] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(30);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const [sortBy, setSortBy] = useState('updated');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [currentSort, setCurrentSort] = useState<{ field: SortField | null; direction: SortDirection }>({
     field: null,
     direction: 'asc'
   });
 
-  useEffect(() => {
-    fetchRepositories();
-  }, [page, sortBy]);
-
-  const fetchRepositories = async () => {
+  const fetchRepositories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        sort: sortBy
+      });
+      
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      
+      console.log(`[DEBUG] Fetching repositories - Page: ${page}, Per Page: ${perPage}, Sort: ${sortBy}`);
+      
       const response = await axios.get<RepositoriesResponse>(
-        `${API_BASE_URL}/api/repositories?page=${page}&per_page=30&sort=${sortBy}`,
+        `${API_BASE_URL}/api/repositories?${params.toString()}`,
         { withCredentials: true }
       );
+      
+      console.log(`[DEBUG] Response received - Total: ${response.data.total_count}, Current page: ${response.data.page}, Has next: ${response.data.has_next}`);
+      
       setRepositories(response.data.repositories);
-      setOriginalRepositories(response.data.repositories);
+      setTotalPages(response.data.total_pages);
+      setTotalCount(response.data.total_count);
+      setHasNext(response.data.has_next);
+      setHasPrev(response.data.has_prev);
       // Reset client-side sorting when fetching new data
       setCurrentSort({ field: null, direction: 'asc' });
     } catch (err) {
@@ -73,6 +97,34 @@ const Repositories: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [page, perPage, sortBy, searchQuery]);
+
+  useEffect(() => {
+    fetchRepositories();
+  }, [fetchRepositories]);
+
+  useEffect(() => {
+    // Reset to page 1 when search query changes (but not on initial load)
+    if (searchQuery !== '' || page !== 1) {
+      if (page !== 1) {
+        setPage(1);
+      }
+    }
+  }, [searchQuery]); // Remove page and fetchRepositories from dependency array
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchInput);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+  };
+
+  const handlePerPageChange = (newPerPage: number) => {
+    setPerPage(newPerPage);
+    setPage(1); // Reset to first page when changing items per page
   };
 
   const handleCopyCloneUrl = async (cloneUrl: string, repoName: string) => {
@@ -211,20 +263,75 @@ const Repositories: React.FC = () => {
       
       <div className="repositories-header">
         <h1>My Repositories</h1>
+        
+        {/* Search Section */}
+        <div className="search-section">
+          <form onSubmit={handleSearch} className="search-form">
+            <div className="search-input-container">
+              <input
+                type="text"
+                placeholder="Search repositories by name or description..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="search-input"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="clear-search-btn"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button type="submit" className="search-btn">
+              Search
+            </button>
+          </form>
+          {searchQuery && (
+            <div className="search-info">
+              Searching for: "<strong>{searchQuery}</strong>" 
+              ({totalCount} result{totalCount !== 1 ? 's' : ''})
+            </div>
+          )}
+        </div>
+
+        {/* Controls Section */}
         <div className="repositories-controls">
-          <label>
-            Sort by:
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
-            >
-              <option value="updated">Recently Updated</option>
-              <option value="created">Recently Created</option>
-              <option value="pushed">Recently Pushed</option>
-              <option value="full_name">Name</option>
-            </select>
-          </label>
+          <div className="control-group">
+            <label>
+              Sort by:
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="sort-select"
+              >
+                <option value="updated">Recently Updated</option>
+                <option value="created">Recently Created</option>
+                <option value="pushed">Recently Pushed</option>
+                <option value="full_name">Name</option>
+              </select>
+            </label>
+          </div>
+          
+          <div className="control-group">
+            <label>
+              Items per page:
+              <select 
+                value={perPage} 
+                onChange={(e) => handlePerPageChange(Number(e.target.value))}
+                className="per-page-select"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -429,21 +536,71 @@ const Repositories: React.FC = () => {
 
       {repositories.length > 0 && (
         <div className="pagination">
-          <button 
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="page-btn"
-          >
-            Previous
-          </button>
-          <span className="page-info">Page {page}</span>
-          <button 
-            onClick={() => setPage(p => p + 1)}
-            disabled={repositories.length < 30}
-            className="page-btn"
-          >
-            Next
-          </button>
+          <div className="pagination-info">
+            Showing {((page - 1) * perPage) + 1} to {Math.min(page * perPage, totalCount)} of {totalCount} repositories
+            {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+          </div>
+          
+          <div className="pagination-controls">
+            <button 
+              onClick={() => setPage(1)}
+              disabled={!hasPrev}
+              className="page-btn first-btn"
+            >
+              First
+            </button>
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={!hasPrev}
+              className="page-btn"
+            >
+              Previous
+            </button>
+            
+            <div className="page-numbers">
+              {/* Show page numbers around current page */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (page <= 3) {
+                  pageNum = i + 1;
+                } else if (page >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = page - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`page-btn ${page === pageNum ? 'active' : ''}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button 
+              onClick={() => {
+                console.log(`[DEBUG] Next button clicked - Current page: ${page}, Going to: ${page + 1}`);
+                setPage(p => p + 1);
+              }}
+              disabled={!hasNext}
+              className="page-btn"
+            >
+              Next
+            </button>
+            <button 
+              onClick={() => setPage(totalPages)}
+              disabled={!hasNext}
+              className="page-btn last-btn"
+            >
+              Last
+            </button>
+          </div>
         </div>
       )}
     </div>
