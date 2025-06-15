@@ -262,7 +262,9 @@ const Repositories: React.FC = () => {
       )}
       
       <div className="repositories-header">
-        <h1>My Repositories</h1>
+        <div className="repositories-title-row">
+          <h1>My Repositories</h1>
+        </div>
         
         {/* Search Section */}
         <div className="search-section">
