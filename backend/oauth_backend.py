@@ -19,6 +19,16 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key')
 
+# Configure session settings for proper cookie handling
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=False,   # Allow JavaScript access
+    SESSION_COOKIE_SAMESITE='Lax',   # Allow cross-site requests for OAuth
+    SESSION_COOKIE_SECURE=False,     # Set to True in production with HTTPS
+    SESSION_COOKIE_DOMAIN='localhost',  # Share cookies across localhost
+    SESSION_COOKIE_PATH='/',         # Make cookies available to all paths
+    PERMANENT_SESSION_LIFETIME=3600  # 1 hour
+)
+
 # Configure caching
 cache_config = {
     'CACHE_TYPE': os.environ.get('CACHE_TYPE', 'simple'),  # fallback to simple cache
@@ -43,7 +53,12 @@ elif os.environ.get('REDIS_HOST'):
 cache = Cache(app, config=cache_config)
 
 # Enable CORS for React frontend on port 80
-CORS(app, supports_credentials=True, origins=['http://localhost', 'http://localhost:80', 'http://localhost:3000'])
+CORS(app, 
+     supports_credentials=True, 
+     origins=['http://localhost', 'http://localhost:80', 'http://localhost:3000', 'http://127.0.0.1', 'http://127.0.0.1:80'],
+     allow_headers=['Content-Type', 'Authorization', 'Cookie'],
+     expose_headers=['Set-Cookie'],
+     methods=['GET', 'POST', 'OPTIONS'])
 
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', 'your_client_id')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', 'your_client_secret')
@@ -161,6 +176,13 @@ def with_timeout(func, timeout_seconds=30):
 
 @app.route('/api/user')
 def get_user():
+    # Debug session information
+    logger.debug(f"[DEBUG] get_user() called")
+    logger.debug(f"[DEBUG] Session keys: {list(session.keys())}")
+    logger.debug(f"[DEBUG] Session ID: {session.get('_id', 'NO_ID')}")
+    logger.debug(f"[DEBUG] Request headers: {dict(request.headers)}")
+    logger.debug(f"[DEBUG] Request cookies: {request.cookies}")
+    
     user = session.get('user')
     if user:
         response_data = {'authenticated': True, 'user': user}
@@ -187,29 +209,59 @@ def login():
 
 @app.route('/api/callback')
 def callback():
+    logger.debug(f"[DEBUG] Callback called with args: {request.args}")
+    logger.debug(f"[DEBUG] Session before callback: {dict(session)}")
+    
     code = request.args.get('code')
     if not code:
+        logger.error("[ERROR] No authorization code received")
         return redirect(f"{FRONTEND_URL}/login?error=no_code")
     
-    # Exchange code for access token
-    token_resp = requests.post(
-        GITHUB_TOKEN_URL,
-        headers={'Accept': 'application/json'},
-        data={
-            'client_id': GITHUB_CLIENT_ID,
-            'client_secret': GITHUB_CLIENT_SECRET,
-            'code': code
-        }
-    )
-    token_json = token_resp.json()
-    access_token = token_json.get('access_token')
-    if not access_token:
-        return redirect(f"{FRONTEND_URL}/login?error=token_failed")
+    logger.debug(f"[DEBUG] Received authorization code: {code[:10]}...")
     
+    # Exchange code for access token
+    try:
+        token_resp = requests.post(
+            GITHUB_TOKEN_URL,
+            headers={'Accept': 'application/json'},
+            data={
+                'client_id': GITHUB_CLIENT_ID,
+                'client_secret': GITHUB_CLIENT_SECRET,
+                'code': code
+            },
+            timeout=10
+        )
+        
+        logger.debug(f"[DEBUG] Token response status: {token_resp.status_code}")
+        
+        if token_resp.status_code != 200:
+            logger.error(f"[ERROR] Token request failed with status {token_resp.status_code}: {token_resp.text}")
+            return redirect(f"{FRONTEND_URL}/login?error=token_failed")
+            
+        token_json = token_resp.json()
+        logger.debug(f"[DEBUG] Token response: {list(token_json.keys())}")
+        
+        access_token = token_json.get('access_token')
+        if not access_token:
+            logger.error(f"[ERROR] No access token in response: {token_json}")
+            return redirect(f"{FRONTEND_URL}/login?error=token_failed")
+            
+        logger.debug(f"[DEBUG] Access token received: {access_token[:10]}...")
+        
+    except requests.RequestException as e:
+        logger.error(f"[ERROR] Token request exception: {str(e)}")
+        return redirect(f"{FRONTEND_URL}/login?error=token_request_failed")
+    except Exception as e:
+        logger.error(f"[ERROR] Unexpected error during token exchange: {str(e)}")
+        return redirect(f"{FRONTEND_URL}/login?error=token_exchange_failed")
+
     try:
         # Get user info using PyGithub
+        logger.debug("[DEBUG] Creating GitHub client...")
         g = Github(access_token)
         user = g.get_user()
+        
+        logger.debug(f"[DEBUG] GitHub user fetched: {user.login}")
         
         # Convert full user info to dict for session storage
         user_json = {
@@ -222,7 +274,7 @@ def callback():
             'location': user.location,
             'company': user.company,
             'blog': user.blog,
-            'twitter_username': user.twitter_username,
+            'twitter_username': getattr(user, 'twitter_username', None),
             'public_repos': user.public_repos,
             'followers': user.followers,
             'following': user.following,
@@ -236,15 +288,27 @@ def callback():
         logger.debug(f"  followers: {user_json['followers']}")
         logger.debug(f"  following: {user_json['following']}")
         
+        # Store user data and access token in session
         session['user'] = user_json
         session['access_token'] = access_token
+        session.permanent = True  # Make session persistent
+        
+        # Debug: verify session was set
+        logger.debug(f"[DEBUG] Session after setting user: user={session.get('user', {}).get('login', 'NOT_SET')}")
+        logger.debug(f"[DEBUG] Session ID: {session.get('_id', 'NO_ID')}")
+        logger.debug(f"[DEBUG] Full session after callback: {dict(session)}")
+        print(f"[DEBUG] OAuth callback completed for user: {user.login}")
+        print(f"[DEBUG] Session user set to: {session.get('user', {}).get('login', 'NOT_SET')}")
         
         # Redirect to React app after successful authentication
         return redirect(f"{FRONTEND_URL}/")
         
     except GithubException as e:
+        logger.error(f"[ERROR] GitHub API exception: {str(e)}")
         return redirect(f"{FRONTEND_URL}/login?error=github_api_failed")
     except Exception as e:
+        logger.error(f"[ERROR] Unexpected error during user fetch: {str(e)}")
+        logger.exception("Full traceback:")
         return redirect(f"{FRONTEND_URL}/login?error=user_fetch_failed")
 
 @app.route('/api/logout', methods=['POST'])
@@ -707,6 +771,29 @@ def debug_simple_repos():
         
     except Exception as e:
         return jsonify({'error': f'Failed to fetch simple repos: {str(e)}'}), 500
+
+@app.route('/api/debug/session')
+def debug_session():
+    """Debug endpoint to check session state"""
+    return jsonify({
+        'session_keys': list(session.keys()),
+        'session_id': session.get('_id', 'NO_ID'),
+        'cookies_received': dict(request.cookies),
+        'user_in_session': 'user' in session,
+        'session_permanent': session.permanent,
+        'session_data': dict(session) if session else {}
+    })
+
+@app.route('/api/debug/test-session')
+def test_session():
+    """Test endpoint to set a simple session value"""
+    session['test_value'] = 'test_data'
+    session.permanent = True
+    return jsonify({
+        'message': 'Test session value set',
+        'session_keys': list(session.keys()),
+        'test_value': session.get('test_value')
+    })
 
 if __name__ == '__main__':
     print(f"[DEBUG] Starting Flask app...")
