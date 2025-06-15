@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
@@ -52,11 +52,6 @@ function App() {
     error: null
   });
 
-  useEffect(() => {
-    checkAuthStatus();
-    handleOAuthCallback();
-  }, []);
-
   const fetchProfile = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/profile`);
@@ -72,7 +67,7 @@ function App() {
     }
   };
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/user`);
       const userData = response.data.user;
@@ -104,7 +99,7 @@ function App() {
         error: null
       });
     }
-  };
+  }, []);
 
   const handleOAuthCallback = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -117,6 +112,11 @@ function App() {
       }));
     }
   };
+
+  useEffect(() => {
+    checkAuthStatus();
+    handleOAuthCallback();
+  }, [checkAuthStatus]);
 
   const handleLogin = async () => {
     try {

@@ -110,7 +110,7 @@ const Repositories: React.FC = () => {
         setPage(1);
       }
     }
-  }, [searchQuery]); // Remove page and fetchRepositories from dependency array
+  }, [searchQuery, page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
