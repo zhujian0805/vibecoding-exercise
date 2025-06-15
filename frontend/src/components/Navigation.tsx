@@ -38,6 +38,12 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
               <li className={location.pathname === '/repositories' ? 'active' : ''}>
                 <Link to="/repositories">Repositories</Link>
               </li>
+              <li className={location.pathname === '/following' ? 'active' : ''}>
+                <Link to="/following">Following</Link>
+              </li>
+              <li className={location.pathname === '/followers' ? 'active' : ''}>
+                <Link to="/followers">Followers</Link>
+              </li>
             </>
           )}
         </ul>

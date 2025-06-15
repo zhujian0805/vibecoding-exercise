@@ -613,6 +613,112 @@ def repositories():
         print(f"[DEBUG] Exception in repositories endpoint: {error_msg}")
         return jsonify({'error': error_msg}), 500
 
+@app.route('/api/following')
+@cache_user_data('following', CACHE_TIMEOUT_MEDIUM)
+def following():
+    """Get the list of users that the authenticated user is following"""
+    print(f"[DEBUG] /api/following called at {request.remote_addr}")
+    
+    # Check if user is logged in
+    if 'user' not in session:
+        print("[DEBUG] User not authenticated")
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Get access token from session
+    access_token = session.get('access_token')
+    if not access_token:
+        print("[DEBUG] No access token found")
+        return jsonify({'error': 'No access token'}), 401
+    
+    user = session.get('user', {})
+    user_login = user.get('login', 'unknown')
+    print(f"[DEBUG] Getting following for user: {user_login}")
+    
+    try:
+        g = Github(access_token)
+        
+        # Check rate limit
+        if not check_rate_limit(g):
+            return jsonify({'error': 'Rate limit too low, please try again later'}), 429
+        
+        # Get the authenticated user's following
+        auth_user = g.get_user()
+        following_users = []
+        
+        for user in auth_user.get_following():
+            following_users.append({
+                'id': user.id,
+                'login': user.login,
+                'avatar_url': user.avatar_url,
+                'html_url': user.html_url,
+                'type': user.type
+            })
+        
+        print(f"[DEBUG] Found {len(following_users)} following users")
+        return jsonify(following_users)
+        
+    except GithubException as e:
+        error_msg = f'GitHub API error: {e.data.get("message", str(e)) if hasattr(e, "data") and e.data else str(e)}'
+        print(f"[DEBUG] GithubException in following endpoint: {error_msg}")
+        return jsonify({'error': error_msg}), getattr(e, 'status', 500)
+    except Exception as e:
+        error_msg = f'Failed to fetch following: {str(e)}'
+        print(f"[DEBUG] Exception in following endpoint: {error_msg}")
+        return jsonify({'error': error_msg}), 500
+
+@app.route('/api/followers')
+@cache_user_data('followers', CACHE_TIMEOUT_MEDIUM)
+def followers():
+    """Get the list of users that follow the authenticated user"""
+    print(f"[DEBUG] /api/followers called at {request.remote_addr}")
+    
+    # Check if user is logged in
+    if 'user' not in session:
+        print("[DEBUG] User not authenticated")
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Get access token from session
+    access_token = session.get('access_token')
+    if not access_token:
+        print("[DEBUG] No access token found")
+        return jsonify({'error': 'No access token'}), 401
+    
+    user = session.get('user', {})
+    user_login = user.get('login', 'unknown')
+    print(f"[DEBUG] Getting followers for user: {user_login}")
+    
+    try:
+        g = Github(access_token)
+        
+        # Check rate limit
+        if not check_rate_limit(g):
+            return jsonify({'error': 'Rate limit too low, please try again later'}), 429
+        
+        # Get the authenticated user's followers
+        auth_user = g.get_user()
+        followers_list = []
+        
+        for user in auth_user.get_followers():
+            followers_list.append({
+                'id': user.id,
+                'login': user.login,
+                'avatar_url': user.avatar_url,
+                'html_url': user.html_url,
+                'type': user.type
+            })
+        
+        print(f"[DEBUG] Found {len(followers_list)} followers")
+        return jsonify(followers_list)
+        
+    except GithubException as e:
+        error_msg = f'GitHub API error: {e.data.get("message", str(e)) if hasattr(e, "data") and e.data else str(e)}'
+        print(f"[DEBUG] GithubException in followers endpoint: {error_msg}")
+        return jsonify({'error': error_msg}), getattr(e, 'status', 500)
+    except Exception as e:
+        error_msg = f'Failed to fetch followers: {str(e)}'
+        print(f"[DEBUG] Exception in followers endpoint: {error_msg}")
+        return jsonify({'error': error_msg}), 500
+
 # Health check endpoint
 @app.route('/api/health')
 def health():
