@@ -32,7 +32,7 @@ app.config.update(
 # Configure caching
 cache_config = {
     'CACHE_TYPE': os.environ.get('CACHE_TYPE', 'simple'),  # fallback to simple cache
-    'CACHE_DEFAULT_TIMEOUT': int(os.environ.get('CACHE_DEFAULT_TIMEOUT', '300')),  # 5 minutes default
+    'CACHE_DEFAULT_TIMEOUT': int(os.environ.get('CACHE_DEFAULT_TIMEOUT', '3600')),  # 1 hour default
 }
 
 # Redis configuration if available
@@ -72,9 +72,9 @@ CALLBACK_URL = os.environ.get('CALLBACK_URL', f'http://{BACKEND_HOST}:{BACKEND_P
 
 # Cache configuration constants
 CACHE_TIMEOUT_SHORT = 60  # 1 minute for rate limits
-CACHE_TIMEOUT_MEDIUM = 300  # 5 minutes for user profile
-CACHE_TIMEOUT_LONG = 600   # 10 minutes for repositories
-CACHE_TIMEOUT_VERY_LONG = 1800  # 30 minutes for static data
+CACHE_TIMEOUT_MEDIUM = 3600  # 1 hour for user profile
+CACHE_TIMEOUT_LONG = 3600   # 1 hour for repositories
+CACHE_TIMEOUT_VERY_LONG = 3600  # 1 hour for static data
 
 def generate_cache_key(prefix, user_id, *args):
     """Generate a consistent cache key for user-specific data"""

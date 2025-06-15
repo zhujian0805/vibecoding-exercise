@@ -10,15 +10,15 @@ This backend now includes a comprehensive caching mechanism to improve performan
 - **Redis Cache**: External Redis server (recommended for production)
 
 ### 2. Cached Endpoints
-- **User Profile** (`/api/profile`): Cached for 5 minutes
-- **Repositories** (`/api/repositories`): Cached for 10 minutes
+- **User Profile** (`/api/profile`): Cached for 1 hour
+- **Repositories** (`/api/repositories`): Cached for 1 hour
 - **Rate Limit Checks**: Cached for 1 minute
 
 ### 3. Cache Timeouts
 - **Short** (60s): Rate limit checks
-- **Medium** (300s): User profile data
-- **Long** (600s): Repository data
-- **Very Long** (1800s): Static data
+- **Medium** (3600s): User profile data
+- **Long** (3600s): Repository data
+- **Very Long** (3600s): Static data
 
 ## Configuration
 
@@ -28,7 +28,7 @@ This backend now includes a comprehensive caching mechanism to improve performan
 CACHE_TYPE=simple  # or 'redis'
 
 # Default timeout
-CACHE_DEFAULT_TIMEOUT=300
+CACHE_DEFAULT_TIMEOUT=3600
 
 # Redis configuration (if using Redis)
 REDIS_HOST=localhost
