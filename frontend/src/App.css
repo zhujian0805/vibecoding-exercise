@@ -133,7 +133,7 @@ body {
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: 0;
+  gap: 2px;
   margin: 0 var(--spacing-xl);
   flex: 1;
   justify-content: space-evenly;
@@ -142,18 +142,30 @@ body {
 .nav-menu li {
   position: relative;
   flex: 1;
+  border-right: 1px solid var(--outline-variant);
+}
+
+.nav-menu li:last-child {
+  border-right: none;
 }
 
 .nav-menu a {
   text-decoration: none;
   color: var(--on-surface-variant);
   font-weight: 500;
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-sm);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
   display: block;
   text-align: center;
   width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-menu a:hover {
@@ -1679,6 +1691,21 @@ body {
 .user-profile .stat:hover span {
   color: var(--on-surface);
   transform: translateY(-2px);
+}
+
+/* Additional styling for clickable stats */
+.clickable-stat {
+  position: relative;
+  user-select: none;
+}
+
+.clickable-stat:hover {
+  cursor: pointer;
+}
+
+.clickable-stat:active {
+  transform: translateY(-1px) scale(0.98) !important;
+  transition: transform 0.1s ease;
 }
 
 .profile-actions {

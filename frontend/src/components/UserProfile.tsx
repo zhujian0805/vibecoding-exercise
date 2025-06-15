@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 interface User {
@@ -26,6 +27,7 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Debug: Log user data to see what we're receiving
   useEffect(() => {
@@ -113,36 +115,30 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => 
       <div className="stats-section">
         <h3 className="stats-title">GitHub Statistics</h3>
         <div className="stats">
-          <a 
-            href={`${user.html_url}?tab=repositories`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="stat"
-            title="View repositories on GitHub"
+          <div 
+            className="stat clickable-stat"
+            onClick={() => navigate('/repositories')}
+            title="View repositories"
           >
             <strong>{(user.public_repos ?? 0).toLocaleString()}</strong>
-            <span>Repositories</span>
-          </a>
-          <a 
-            href={`${user.html_url}?tab=followers`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="stat"
-            title="View followers on GitHub"
+            <span>REPOSITORIES</span>
+          </div>
+          <div 
+            className="stat clickable-stat"
+            onClick={() => navigate('/followers')}
+            title="View followers"
           >
             <strong>{(user.followers ?? 0).toLocaleString()}</strong>
-            <span>Followers</span>
-          </a>
-          <a 
-            href={`${user.html_url}?tab=following`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="stat"
-            title="View following on GitHub"
+            <span>FOLLOWERS</span>
+          </div>
+          <div 
+            className="stat clickable-stat"
+            onClick={() => navigate('/following')}
+            title="View following"
           >
             <strong>{(user.following ?? 0).toLocaleString()}</strong>
-            <span>Following</span>
-          </a>
+            <span>FOLLOWING</span>
+          </div>
         </div>
       </div>
 
