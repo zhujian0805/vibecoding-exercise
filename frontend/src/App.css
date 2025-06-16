@@ -890,7 +890,7 @@ body {
 
 .repositories-title-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-md);
@@ -1274,15 +1274,7 @@ body {
   margin: 0;
 }
 
-/* Search Section Styles */
-.search-section {
-  margin: 0;
-  padding: var(--spacing-md);
-  background-color: var(--surface-color);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--outline-variant);
-}
-
+/* Search Form Styles */
 .search-form {
   display: flex;
   gap: var(--spacing-sm);
@@ -1364,6 +1356,10 @@ body {
   font-size: var(--font-size-small);
   color: var(--on-surface-variant);
   margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--surface-variant);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--outline-variant);
 }
 
 /* Controls Section Styles */
@@ -1377,6 +1373,36 @@ body {
   background-color: var(--surface-color);
   border-radius: var(--radius-md);
   border: 1px solid var(--outline-variant);
+}
+
+/* Compact Controls Section Styles */
+.repositories-compact-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--spacing-md);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--outline-variant);
+}
+
+.repositories-compact-controls .search-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin: 0;
+  flex: 1;
+  max-width: 500px;
+}
+
+.repositories-compact-controls .search-input-container {
+  flex: 1;
+}
+
+.repositories-compact-controls .control-group {
+  flex-shrink: 0;
 }
 
 .control-group {
@@ -1892,13 +1918,30 @@ body {
   }
 }
 
-@media (max-width: 1024px) {
-  .repositories-header {
+@media (max-width: 1024px) {  .repositories-header {
     gap: var(--spacing-md);
   }
-  
-  .search-section {
+
+  /* Compact controls responsive */
+  .repositories-compact-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .repositories-compact-controls .search-form {
+    max-width: none;
+    width: 100%;
+  }
+
+  .repositories-compact-controls .control-group {
+    justify-content: space-between;
+  }
+
+  .repositories-compact-controls {
     padding: var(--spacing-sm);
+    flex-direction: column;
+    align-items: stretch;
   }
   
   .search-input-container {
@@ -1986,7 +2029,7 @@ body {
   margin-top: 0;
 }
 
-.search-section,
+.repositories-compact-controls,
 .repositories-controls {
   box-shadow: var(--shadow-1);
 }

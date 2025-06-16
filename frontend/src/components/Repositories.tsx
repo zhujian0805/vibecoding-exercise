@@ -113,14 +113,10 @@ const Repositories: React.FC = () => {
     fetchRepositories();
   }, [fetchRepositories]);
 
+  // Reset to page 1 when search query changes
   useEffect(() => {
-    // Reset to page 1 when search query changes (but not on initial load)
-    if (searchQuery !== '' || page !== 1) {
-      if (page !== 1) {
-        setPage(1);
-      }
-    }
-  }, [searchQuery, page]);
+    setPage(1);
+  }, [searchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,8 +266,8 @@ const Repositories: React.FC = () => {
           <h1>My Repositories</h1>
         </div>
         
-        {/* Search Section */}
-        <div className="search-section">
+        {/* Compact Controls Section - All in one frame */}
+        <div className="repositories-compact-controls">
           <form onSubmit={handleSearch} className="search-form">
             <div className="search-input-container">
               <input
@@ -296,16 +292,7 @@ const Repositories: React.FC = () => {
               Search
             </button>
           </form>
-          {searchQuery && (
-            <div className="search-info">
-              Searching for: "<strong>{searchQuery}</strong>" 
-              ({totalCount} result{totalCount !== 1 ? 's' : ''})
-            </div>
-          )}
-        </div>
-
-        {/* Controls Section */}
-        <div className="repositories-controls">
+          
           <div className="control-group">
             <label>
               Sort by:
@@ -343,6 +330,14 @@ const Repositories: React.FC = () => {
             </label>
           </div>
         </div>
+        
+        {/* Search Results Info */}
+        {searchQuery && (
+          <div className="search-info">
+            Searching for: "<strong>{searchQuery}</strong>" 
+            ({totalCount} result{totalCount !== 1 ? 's' : ''})
+          </div>
+        )}
       </div>
 
       {repositories.length === 0 ? (
@@ -350,8 +345,78 @@ const Repositories: React.FC = () => {
           <p>No repositories found.</p>
         </div>
       ) : (
-        <div className="repositories-table-container">
-          <table className="repositories-table">
+        <>
+          {/* Pagination controls above the table */}
+          <div className="pagination">
+            <div className="pagination-info">
+              Showing {((page - 1) * perPage) + 1} to {Math.min(page * perPage, totalCount)} of {totalCount} repositories
+              {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+            </div>
+            
+            <div className="pagination-controls">
+              <button 
+                onClick={() => setPage(1)}
+                disabled={!hasPrev}
+                className="page-btn first-btn"
+              >
+                First
+              </button>
+              <button 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={!hasPrev}
+                className="page-btn"
+              >
+                Previous
+              </button>
+              
+              <div className="page-numbers">
+                {/* Show page numbers around current page */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`page-btn ${page === pageNum ? 'active' : ''}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button 
+                onClick={() => {
+                  console.log(`[DEBUG] Next button clicked - Current page: ${page}, Going to: ${page + 1}`);
+                  setPage(p => p + 1);
+                }}
+                disabled={!hasNext}
+                className="page-btn"
+              >
+                Next
+              </button>
+              <button 
+                onClick={() => setPage(totalPages)}
+                disabled={!hasNext}
+                className="page-btn last-btn"
+              >
+                Last
+              </button>
+            </div>
+          </div>
+
+          <div className="repositories-table-container">
+            <table className="repositories-table">
             <thead>
               <tr>
                 <th className={`repo-name-cell ${currentSort.field === 'name' ? 'sorted' : ''}`}>
@@ -541,77 +606,8 @@ const Repositories: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {repositories.length > 0 && (
-        <div className="pagination">
-          <div className="pagination-info">
-            Showing {((page - 1) * perPage) + 1} to {Math.min(page * perPage, totalCount)} of {totalCount} repositories
-            {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
           </div>
-          
-          <div className="pagination-controls">
-            <button 
-              onClick={() => setPage(1)}
-              disabled={!hasPrev}
-              className="page-btn first-btn"
-            >
-              First
-            </button>
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={!hasPrev}
-              className="page-btn"
-            >
-              Previous
-            </button>
-            
-            <div className="page-numbers">
-              {/* Show page numbers around current page */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (page <= 3) {
-                  pageNum = i + 1;
-                } else if (page >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = page - 2 + i;
-                }
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`page-btn ${page === pageNum ? 'active' : ''}`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-            </div>
-            
-            <button 
-              onClick={() => {
-                console.log(`[DEBUG] Next button clicked - Current page: ${page}, Going to: ${page + 1}`);
-                setPage(p => p + 1);
-              }}
-              disabled={!hasNext}
-              className="page-btn"
-            >
-              Next
-            </button>
-            <button 
-              onClick={() => setPage(totalPages)}
-              disabled={!hasNext}
-              className="page-btn last-btn"
-            >
-              Last
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
