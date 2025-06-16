@@ -2,3 +2,4 @@ frontend/node_modules
 __pycache__
 cookies.txt
 node_modules
+*.rdb

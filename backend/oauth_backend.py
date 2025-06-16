@@ -439,8 +439,64 @@ def process_single_repo(repo):
         print(f"[DEBUG] Error processing repo {getattr(repo, 'name', 'unknown')}: {e}")
         return None
 
+def fetch_repos_page(access_token, page, per_page=100):
+    """Fetch a single page of repositories using direct API call"""
+    url = f"https://api.github.com/user/repos"
+    headers = {
+        'Authorization': f'token {access_token}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
+    params = {
+        'visibility': 'all',
+        'sort': 'updated',
+        'page': page,
+        'per_page': per_page
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch page {page}: {e}")
+        return []
+
+def get_total_repo_count(access_token):
+    """Get the total number of repositories to determine how many pages to fetch"""
+    try:
+        g = Github(access_token)
+        user = g.get_user()
+        return user.public_repos + user.total_private_repos
+    except Exception as e:
+        logger.warning(f"Failed to get repo count, using fallback method: {e}")
+        # Fallback: fetch first page to get total from headers
+        try:
+            url = "https://api.github.com/user/repos"
+            headers = {
+                'Authorization': f'token {access_token}',
+                'Accept': 'application/vnd.github.v3+json'
+            }
+            params = {'visibility': 'all', 'sort': 'updated', 'page': 1, 'per_page': 1}
+            response = requests.get(url, headers=headers, params=params, timeout=10)
+            response.raise_for_status()
+            
+            # Try to get total from Link header pagination info
+            link_header = response.headers.get('Link', '')
+            if 'rel="last"' in link_header:
+                # Extract last page number from Link header
+                import re
+                last_page_match = re.search(r'page=(\d+)[^>]*>\s*;\s*rel="last"', link_header)
+                if last_page_match:
+                    last_page = int(last_page_match.group(1))
+                    return last_page * 100  # Rough estimate
+            
+            # If no pagination info, assume less than 100 repos
+            return len(response.json()) if response.json() else 0
+        except Exception:
+            return 100  # Conservative fallback
+
 def get_all_user_repositories(access_token, user_id):
-    """Get all repositories for a user and cache them as a single dataset"""
+    """Get all repositories for a user with parallelized page fetching"""
     cache_key = generate_cache_key('repos', user_id)
     
     try:
@@ -451,42 +507,63 @@ def get_all_user_repositories(access_token, user_id):
     except Exception as e:
         logger.warning(f"Repository cache get failed: {e}")
     
-    # Fetch repositories from GitHub API
+    # Fetch repositories from GitHub API with parallel pagination
     try:
-        g = Github(access_token)
-        user = g.get_user()
+        # First, determine how many pages we need to fetch
+        total_repos = get_total_repo_count(access_token)
+        max_repos = int(os.environ.get('MAX_REPOS_FETCH', '2000'))
+        actual_limit = min(total_repos, max_repos)
         
-        # Collect repository objects
-        repo_objects = []
+        per_page = 100  # GitHub's maximum per page
+        num_pages = (actual_limit + per_page - 1) // per_page  # Ceiling division
         
-        for repo in user.get_repos(visibility='all', sort='updated'):
-            repo_objects.append(repo)
+        logger.debug(f"Fetching {actual_limit} repositories across {num_pages} pages in parallel")
+        
+        # Fetch all pages in parallel
+        all_repo_data = []
+        max_workers = min(10, num_pages)  # Limit concurrent API calls to be respectful
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all page fetch tasks
+            future_to_page = {
+                executor.submit(fetch_repos_page, access_token, page + 1, per_page): page + 1
+                for page in range(num_pages)
+            }
             
-            # Safety limit to prevent memory issues
-            max_repos = int(os.environ.get('MAX_REPOS_FETCH', '2000'))
-            if len(repo_objects) >= max_repos:
-                logger.warning(f"Reached maximum repository fetch limit of {max_repos}")
-                break
+            # Collect results as they complete
+            for future in as_completed(future_to_page):
+                page_num = future_to_page[future]
+                try:
+                    page_data = future.result(timeout=30)
+                    if page_data:
+                        all_repo_data.extend(page_data)
+                        logger.debug(f"Successfully fetched page {page_num} with {len(page_data)} repos")
+                    else:
+                        logger.warning(f"Page {page_num} returned no data")
+                except Exception as e:
+                    logger.error(f"Failed to fetch page {page_num}: {e}")
         
-        # Process repositories in parallel
+        logger.debug(f"Fetched {len(all_repo_data)} repositories from {num_pages} pages")
+        
+        # Now process the repository data in parallel
         all_repositories = []
-        max_workers = min(200, len(repo_objects))
-        
-        if repo_objects:
+        if all_repo_data:
+            max_workers = min(200, len(all_repo_data))
+            
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_repo = {
-                    executor.submit(process_single_repo, repo): repo 
-                    for repo in repo_objects
+                    executor.submit(process_repo_data, repo_data): repo_data 
+                    for repo_data in all_repo_data
                 }
                 
                 for future in as_completed(future_to_repo):
-                    repo = future_to_repo[future]
+                    repo_data = future_to_repo[future]
                     try:
                         result = future.result(timeout=30)
                         if result:
                             all_repositories.append(result)
                     except Exception as e:
-                        logger.error(f"Failed to process repo {getattr(repo, 'name', 'unknown')}: {e}")
+                        logger.error(f"Failed to process repo {repo_data.get('name', 'unknown')}: {e}")
         
         # Cache the complete dataset
         try:
@@ -980,6 +1057,44 @@ def test_session():
         'session_keys': list(session.keys()),
         'test_value': session.get('test_value')
     })
+
+def process_repo_data(repo_data):
+    """Process raw repository data from GitHub API"""
+    try:
+        # Topics might need a separate API call for some repos, but many repos include them
+        topics = repo_data.get('topics', [])
+        
+        return {
+            'id': repo_data.get('id'),
+            'name': repo_data.get('name'),
+            'full_name': repo_data.get('full_name'),
+            'description': repo_data.get('description'),
+            'private': repo_data.get('private', False),
+            'html_url': repo_data.get('html_url'),
+            'clone_url': repo_data.get('clone_url'),
+            'ssh_url': repo_data.get('ssh_url'),
+            'language': repo_data.get('language'),
+            'stargazers_count': repo_data.get('stargazers_count', 0),
+            'watchers_count': repo_data.get('watchers_count', 0),
+            'forks_count': repo_data.get('forks_count', 0),
+            'size': repo_data.get('size', 0),
+            'default_branch': repo_data.get('default_branch'),
+            'created_at': repo_data.get('created_at'),
+            'updated_at': repo_data.get('updated_at'),
+            'pushed_at': repo_data.get('pushed_at'),
+            'archived': repo_data.get('archived', False),
+            'disabled': repo_data.get('disabled', False),
+            'fork': repo_data.get('fork', False),
+            'topics': topics,
+            'visibility': repo_data.get('visibility', 'private' if repo_data.get('private') else 'public'),
+            'owner': {
+                'login': repo_data.get('owner', {}).get('login'),
+                'type': repo_data.get('owner', {}).get('type')
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error processing repo data for {repo_data.get('name', 'unknown')}: {e}")
+        return None
 
 if __name__ == '__main__':
     print(f"[DEBUG] Starting Flask app...")
