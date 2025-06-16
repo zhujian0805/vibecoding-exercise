@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface User {
   login: string;
@@ -35,7 +36,20 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
               alt="Avatar" 
               className="avatar-small"
             />
-            <p>Hello, <strong>{user.name || user.login}</strong>!</p>
+            <div className="user-info">
+              <p>Hello, <strong>{user.name || user.login}</strong>!</p>
+              <div className="user-stats">
+                <span className="stat-item">
+                  <strong>{user.total_repos || user.public_repos || 0}</strong> repositories
+                </span>
+                <span className="stat-item">
+                  <strong>{user.followers || 0}</strong> followers
+                </span>
+                <span className="stat-item">
+                  <strong>{user.following || 0}</strong> following
+                </span>
+              </div>
+            </div>
           </div>
         ) : (
           <p>Please log in to access your profile and repositories.</p>
@@ -45,14 +59,22 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
       <div className="features-section">
         <h2>Features</h2>
         <div className="features-grid">
-          <div className="feature-card">
+          <Link to="/profile" className="feature-card">
             <h3>User Profile</h3>
             <p>View your GitHub profile information, including bio, location, and social links.</p>
-          </div>
-          <div className="feature-card">
+          </Link>
+          <Link to="/repositories" className="feature-card">
             <h3>Repositories</h3>
             <p>Browse all your GitHub repositories with detailed information and statistics.</p>
-          </div>
+          </Link>
+          <Link to="/following" className="feature-card">
+            <h3>Following</h3>
+            <p>See who you're following on GitHub and explore their profiles.</p>
+          </Link>
+          <Link to="/followers" className="feature-card">
+            <h3>Followers</h3>
+            <p>View your GitHub followers and see who's interested in your work.</p>
+          </Link>
           <div className="feature-card">
             <h3>OAuth Flow</h3>
             <p>Secure authentication using GitHub's OAuth 2.0 flow.</p>
