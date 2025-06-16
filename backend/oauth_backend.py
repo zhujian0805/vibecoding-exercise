@@ -185,31 +185,6 @@ def get_user():
     
     user = session.get('user')
     if user:
-        # Check if total_repos is missing and update if needed
-        if 'total_repos' not in user:
-            logger.debug(f"[DEBUG] total_repos missing from user session, attempting to update...")
-            access_token = session.get('access_token')
-            if access_token:
-                try:
-                    # Get total repository count using GitHub API
-                    g = Github(access_token)
-                    github_user = g.get_user()
-                    repo_list = github_user.get_repos()
-                    total_repos = repo_list.totalCount
-                    
-                    # Update session with total_repos
-                    user['total_repos'] = total_repos
-                    session['user'] = user
-                    session.permanent = True
-                    
-                    logger.debug(f"[DEBUG] Updated user session with total_repos: {total_repos}")
-                except Exception as e:
-                    logger.warning(f"[WARNING] Failed to fetch total_repos for user update: {e}")
-                    # Fallback to public_repos if available
-                    user['total_repos'] = user.get('public_repos', 0)
-                    session['user'] = user
-                    session.permanent = True
-        
         response_data = {'authenticated': True, 'user': user}
         logger.debug(f"[DEBUG] get_user() returning data: {json.dumps(response_data, indent=2, default=str)}")
         print(f"[DEBUG] get_user() return object: {json.dumps(response_data, indent=2, default=str)}")
