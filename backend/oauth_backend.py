@@ -1,20 +1,38 @@
-from flask import Flask, redirect, url_for, session, request, jsonify
-from flask_cors import CORS
-from flask_caching import Cache
-import os
-import requests
-import time
-import logging
-import hashlib
-import json
-from github import Github
-from github.GithubException import GithubException
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial, wraps
+"""
+Backward compatibility entry point for the refactored OAuth backend
+This file maintains compatibility while the new architecture is in the main.py file
+"""
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# For backward compatibility, import and run the new refactored app
+try:
+    from main import main
+    
+    if __name__ == '__main__':
+        main()
+        
+except ImportError as e:
+    # Fallback to original code if new modules are not available
+    print(f"Warning: Could not import refactored modules: {e}")
+    print("Running with original code...")
+    
+    # Original imports and code continue below...
+    from flask import Flask, redirect, url_for, session, request, jsonify
+    from flask_cors import CORS
+    from flask_caching import Cache
+    import os
+    import requests
+    import time
+    import logging
+    import hashlib
+    import json
+    from github import Github
+    from github.GithubException import GithubException
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from functools import partial, wraps
+
+    # Configure logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev_secret_key')
@@ -50,7 +68,12 @@ elif os.environ.get('REDIS_HOST'):
         'CACHE_REDIS_PASSWORD': os.environ.get('REDIS_PASSWORD'),
     })
 
-cache = Cache(app, config=cache_config)
+cache = Cache(app, config=cache_config)    # Add cache manager instantiation
+try:
+    from services.cache_service import CacheManager
+except ImportError:
+    from cache_manager import CacheManager
+cache_manager = CacheManager(cache)
 
 # Enable CORS for React frontend on port 80
 CORS(app, 
@@ -74,101 +97,6 @@ CALLBACK_URL = os.environ.get('CALLBACK_URL', f'http://{BACKEND_HOST}:{BACKEND_P
 CACHE_TIMEOUT_SHORT = 60  # 1 minute for rate limits
 CACHE_TIMEOUT_MEDIUM = 3600  # 1 hour for user profile
 CACHE_TIMEOUT_LONG = 3600   # 1 hour for repositories
-
-def generate_cache_key(prefix, user_id):
-    """Generate a consistent cache key for user-specific data - simplified to single cache per type"""
-    return f"{prefix}:{user_id}"
-
-def cache_user_data(prefix, timeout=CACHE_TIMEOUT_MEDIUM):
-    """Decorator to cache user-specific data with simplified single cache per data type"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Get user ID from session
-            user = session.get('user')
-            if not user:
-                return func(*args, **kwargs)
-            
-            user_id = user.get('id')
-            if not user_id:
-                return func(*args, **kwargs)
-            
-            # Generate simple cache key (no arguments included for single cache approach)
-            cache_key = generate_cache_key(prefix, user_id)
-            
-            # Try to get from cache
-            try:
-                cached_result = cache.get(cache_key)
-                if cached_result is not None:
-                    logger.debug(f"Cache hit for key: {cache_key}")
-                    return cached_result
-            except Exception as e:
-                logger.warning(f"Cache get failed for {cache_key}: {e}")
-            
-            # Execute function and cache result
-            try:
-                result = func(*args, **kwargs)
-                cache.set(cache_key, result, timeout=timeout)
-                logger.debug(f"Cache set for key: {cache_key} (timeout: {timeout}s)")
-                return result
-            except Exception as e:
-                logger.error(f"Function execution failed for {cache_key}: {e}")
-                raise
-        return wrapper
-    return decorator
-
-def invalidate_user_cache(user_id, prefix=None):
-    """Invalidate cache for a specific user and data type"""
-    try:
-        if prefix:
-            # Clear specific cache type for user
-            cache_key = generate_cache_key(prefix, user_id)
-            cache.delete(cache_key)
-            logger.debug(f"Cache invalidated for key: {cache_key}")
-        else:
-            # Clear common cache types for user
-            for cache_prefix in ['repos', 'profile', 'followers', 'following']:
-                cache_key = generate_cache_key(cache_prefix, user_id)
-                cache.delete(cache_key)
-            logger.debug(f"All cache invalidated for user {user_id}")
-    except Exception as e:
-        logger.warning(f"Cache invalidation failed: {e}")
-
-def check_rate_limit(g):
-    """Check GitHub API rate limit and log the status"""
-    """Check GitHub API rate limit and log the status"""
-    try:
-        rate_limit = g.get_rate_limit()
-        core_limit = rate_limit.core
-        print(f"[DEBUG] Rate limit status - Remaining: {core_limit.remaining}/{core_limit.limit}, Resets at: {core_limit.reset}")
-        
-        if core_limit.remaining < 10:
-            print(f"[WARNING] Low rate limit remaining: {core_limit.remaining}")
-            return False
-        return True
-    except Exception as e:
-        print(f"[DEBUG] Failed to check rate limit: {e}")
-        return True
-
-def with_timeout(func, timeout_seconds=30):
-    """Simple timeout wrapper for API calls"""
-    import signal
-    
-    def timeout_handler(signum, frame):
-        raise TimeoutError(f"Operation timed out after {timeout_seconds} seconds")
-    
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout_seconds)
-    
-    try:
-        result = func()
-        signal.alarm(0)  # Cancel the alarm
-        return result
-    except TimeoutError:
-        print(f"[DEBUG] Operation timed out after {timeout_seconds} seconds")
-        raise
-    finally:
-        signal.alarm(0)  # Ensure alarm is cancelled
 
 @app.route('/api/user')
 def get_user():
@@ -335,7 +263,7 @@ def logout():
     return jsonify({'message': 'Logged out successfully'})
 
 @app.route('/api/profile')
-@cache_user_data('profile', CACHE_TIMEOUT_MEDIUM)
+@cache_manager.cache_user_data('profile', CACHE_TIMEOUT_MEDIUM)
 def profile():
     # Check if user is logged in
     if 'user' not in session:
@@ -764,7 +692,7 @@ def repositories():
         return jsonify({'error': error_msg}), 500
 
 @app.route('/api/following')
-@cache_user_data('following', CACHE_TIMEOUT_MEDIUM)
+@cache_manager.cache_user_data('following', CACHE_TIMEOUT_MEDIUM)
 def following():
     """Get the list of users that the authenticated user is following"""
     print(f"[DEBUG] /api/following called at {request.remote_addr}")
@@ -817,7 +745,7 @@ def following():
         return jsonify({'error': error_msg}), 500
 
 @app.route('/api/followers')
-@cache_user_data('followers', CACHE_TIMEOUT_MEDIUM)
+@cache_manager.cache_user_data('followers', CACHE_TIMEOUT_MEDIUM)
 def followers():
     """Get the list of users that follow the authenticated user"""
     print(f"[DEBUG] /api/followers called at {request.remote_addr}")
