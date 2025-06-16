@@ -98,7 +98,7 @@ class CacheManagerSingleton:
                 return self.delete(key)
             else:
                 # Clear all user-specific caches
-                prefixes = ['repos', 'profile', 'followers', 'following', 'rate_limit']
+                prefixes = ['repos', 'repos_raw', 'profile', 'followers', 'following', 'rate_limit']
                 success = True
                 for p in prefixes:
                     key = self.generate_cache_key(p, user_id)

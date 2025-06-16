@@ -46,7 +46,7 @@ class CacheManager:
                 self.cache.delete(key)
                 logger.debug(f"Cache invalidated for {key}")
             else:
-                for p in ['repos', 'profile', 'followers', 'following']:
+                for p in ['repos', 'repos_raw', 'profile', 'followers', 'following']:
                     key = self.generate_cache_key(p, user_id)
                     self.cache.delete(key)
                 logger.debug(f"All cache invalidated for user {user_id}")

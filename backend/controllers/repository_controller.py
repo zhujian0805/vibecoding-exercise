@@ -99,12 +99,14 @@ class RepositoryController:
             fetch_start = time.time()
             
             # Get all repositories from cache or API
-            cache_key = self.cache_manager.generate_cache_key('repos', user_id)
-            cached_repos = self.cache_manager.get(cache_key)
+            cache_key = self.cache_manager.generate_cache_key('repos_raw', user_id)
+            cached_repo_data = self.cache_manager.get(cache_key)
             
-            if cached_repos is not None:
+            if cached_repo_data is not None:
                 logger.debug(f"Repository cache hit for user {user_id}")
-                repositories = cached_repos
+                # Convert cached raw data to Repository objects
+                from models.repository import Repository
+                repositories = [Repository.from_api_data(repo_dict) for repo_dict in cached_repo_data]
             else:
                 logger.debug(f"Repository cache miss for user {user_id}, fetching from API")
                 
@@ -114,8 +116,9 @@ class RepositoryController:
                 
                 repositories = repo_service.get_all_repositories(user_id)
                 
-                # Cache the repositories for 1 hour
-                self.cache_manager.set(cache_key, repositories, timeout=3600)
+                # Cache the raw repository data (as dicts) for better serialization
+                repo_data_dicts = [repo.to_dict() for repo in repositories]
+                self.cache_manager.set(cache_key, repo_data_dicts, timeout=3600)
                 logger.debug(f"Cached {len(repositories)} repositories for user {user_id}")
             
             # Create repository service for business logic operations
