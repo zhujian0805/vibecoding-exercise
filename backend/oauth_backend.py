@@ -74,19 +74,13 @@ CALLBACK_URL = os.environ.get('CALLBACK_URL', f'http://{BACKEND_HOST}:{BACKEND_P
 CACHE_TIMEOUT_SHORT = 60  # 1 minute for rate limits
 CACHE_TIMEOUT_MEDIUM = 3600  # 1 hour for user profile
 CACHE_TIMEOUT_LONG = 3600   # 1 hour for repositories
-CACHE_TIMEOUT_VERY_LONG = 3600  # 1 hour for static data
 
-def generate_cache_key(prefix, user_id, *args):
-    """Generate a consistent cache key for user-specific data"""
-    key_parts = [str(prefix), str(user_id)] + [str(arg) for arg in args]
-    key_string = ':'.join(key_parts)
-    # Hash long keys to avoid Redis key length limits
-    if len(key_string) > 100:
-        key_string = f"{prefix}:{user_id}:{hashlib.md5(key_string.encode()).hexdigest()}"
-    return key_string
+def generate_cache_key(prefix, user_id):
+    """Generate a consistent cache key for user-specific data - simplified to single cache per type"""
+    return f"{prefix}:{user_id}"
 
 def cache_user_data(prefix, timeout=CACHE_TIMEOUT_MEDIUM):
-    """Decorator to cache user-specific data"""
+    """Decorator to cache user-specific data with simplified single cache per data type"""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -99,8 +93,8 @@ def cache_user_data(prefix, timeout=CACHE_TIMEOUT_MEDIUM):
             if not user_id:
                 return func(*args, **kwargs)
             
-            # Generate cache key with function arguments
-            cache_key = generate_cache_key(prefix, user_id, str(args), str(sorted(kwargs.items())))
+            # Generate simple cache key (no arguments included for single cache approach)
+            cache_key = generate_cache_key(prefix, user_id)
             
             # Try to get from cache
             try:
@@ -124,17 +118,19 @@ def cache_user_data(prefix, timeout=CACHE_TIMEOUT_MEDIUM):
     return decorator
 
 def invalidate_user_cache(user_id, prefix=None):
-    """Invalidate cache for a specific user"""
+    """Invalidate cache for a specific user and data type"""
     try:
         if prefix:
-            # If using Redis, we could use pattern matching
-            cache_key = generate_cache_key(prefix, user_id, '*')
-            # For simple cache, we'll need to track keys manually
-            pass
+            # Clear specific cache type for user
+            cache_key = generate_cache_key(prefix, user_id)
+            cache.delete(cache_key)
+            logger.debug(f"Cache invalidated for key: {cache_key}")
         else:
-            # Clear all cache if no prefix specified
-            cache.clear()
-        logger.debug(f"Cache invalidated for user {user_id}, prefix: {prefix}")
+            # Clear common cache types for user
+            for cache_prefix in ['repos', 'profile', 'followers', 'following']:
+                cache_key = generate_cache_key(cache_prefix, user_id)
+                cache.delete(cache_key)
+            logger.debug(f"All cache invalidated for user {user_id}")
     except Exception as e:
         logger.warning(f"Cache invalidation failed: {e}")
 
@@ -443,21 +439,15 @@ def process_single_repo(repo):
         print(f"[DEBUG] Error processing repo {getattr(repo, 'name', 'unknown')}: {e}")
         return None
 
-def get_cached_repositories(access_token, user_id, sort='updated', limit=None, visibility='all'):
-    """Get repositories with caching support"""
-    # Use a reasonable default limit to avoid memory issues, but allow unlimited
-    effective_limit = limit if limit is not None else 1000  # Default to 1000 for caching key
-    cache_key = generate_cache_key('repos', user_id, sort, effective_limit, visibility)
+def get_all_user_repositories(access_token, user_id):
+    """Get all repositories for a user and cache them as a single dataset"""
+    cache_key = generate_cache_key('repos', user_id)
     
     try:
         cached_repos = cache.get(cache_key)
         if cached_repos is not None:
             logger.debug(f"Repository cache hit for user {user_id}")
-            # If no limit specified, return all cached repos
-            if limit is None:
-                return cached_repos
-            # Otherwise return limited results
-            return cached_repos[:limit]
+            return cached_repos
     except Exception as e:
         logger.warning(f"Repository cache get failed: {e}")
     
@@ -468,17 +458,11 @@ def get_cached_repositories(access_token, user_id, sort='updated', limit=None, v
         
         # Collect repository objects
         repo_objects = []
-        repo_count = 0
         
-        for repo in user.get_repos(visibility=visibility, sort=sort):
-            repo_count += 1
+        for repo in user.get_repos(visibility='all', sort='updated'):
             repo_objects.append(repo)
             
-            # Only stop if we have a specific limit and reached it
-            if limit is not None and len(repo_objects) >= limit:
-                break
-            
-            # Safety limit to prevent memory issues (can be configured)
+            # Safety limit to prevent memory issues
             max_repos = int(os.environ.get('MAX_REPOS_FETCH', '2000'))
             if len(repo_objects) >= max_repos:
                 logger.warning(f"Reached maximum repository fetch limit of {max_repos}")
@@ -504,17 +488,7 @@ def get_cached_repositories(access_token, user_id, sort='updated', limit=None, v
                     except Exception as e:
                         logger.error(f"Failed to process repo {getattr(repo, 'name', 'unknown')}: {e}")
         
-        # Sort results
-        if sort == 'updated':
-            all_repositories.sort(key=lambda x: x['updated_at'] or '', reverse=True)
-        elif sort == 'created':
-            all_repositories.sort(key=lambda x: x['created_at'] or '', reverse=True)
-        elif sort == 'pushed':
-            all_repositories.sort(key=lambda x: x['pushed_at'] or '', reverse=True)
-        elif sort == 'full_name':
-            all_repositories.sort(key=lambda x: x['full_name'].lower())
-        
-        # Cache the results (cache all fetched repos)
+        # Cache the complete dataset
         try:
             cache.set(cache_key, all_repositories, timeout=CACHE_TIMEOUT_LONG)
             logger.debug(f"Cached {len(all_repositories)} repositories for user {user_id}")
@@ -526,6 +500,78 @@ def get_cached_repositories(access_token, user_id, sort='updated', limit=None, v
     except Exception as e:
         logger.error(f"Failed to fetch repositories: {e}")
         raise
+
+def sort_repositories_backend(repositories, sort='updated', table_sort=None, table_sort_direction='asc'):
+    """Sort repositories on the backend from cached data"""
+    # Make a copy to avoid modifying original cached data
+    sorted_repos = repositories.copy()
+    
+    # Apply table sorting first if specified (overrides main sort)
+    if table_sort:
+        try:
+            def get_sort_value(repo, field):
+                value = repo.get(field)
+                
+                # Handle null/undefined values
+                if value is None:
+                    return ''
+                
+                # Special handling for different field types
+                if field == 'name':
+                    return value.lower() if value else ''
+                elif field == 'language':
+                    return value.lower() if value else ''
+                elif field == 'updated_at':
+                    return value  # ISO format strings sort correctly
+                elif field in ['stargazers_count', 'forks_count', 'size']:
+                    try:
+                        return int(value) if value is not None else 0
+                    except:
+                        return 0
+                else:
+                    return value or ''
+            
+            sorted_repos.sort(
+                key=lambda repo: get_sort_value(repo, table_sort),
+                reverse=(table_sort_direction == 'desc')
+            )
+            return sorted_repos
+        except Exception as e:
+            logger.error(f"Error applying table sort {table_sort}: {e}")
+    
+    # Apply main sorting
+    if sort == 'updated':
+        sorted_repos.sort(key=lambda x: x['updated_at'] or '', reverse=True)
+    elif sort == 'created':
+        sorted_repos.sort(key=lambda x: x['created_at'] or '', reverse=True)
+    elif sort == 'pushed':
+        sorted_repos.sort(key=lambda x: x['pushed_at'] or '', reverse=True)
+    elif sort == 'full_name':
+        sorted_repos.sort(key=lambda x: x['full_name'].lower())
+    
+    return sorted_repos
+
+def filter_repositories_backend(repositories, search_query=None):
+    """Filter repositories on the backend from cached data"""
+    if not search_query:
+        return repositories
+    
+    search_query = search_query.strip().lower()
+    if not search_query:
+        return repositories
+    
+    filtered_repos = []
+    for repo in repositories:
+        repo_name = repo['name'].lower()
+        repo_full_name = repo['full_name'].lower()
+        repo_description = (repo['description'] or '').lower()
+        
+        if (search_query in repo_name or 
+            search_query in repo_full_name or 
+            search_query in repo_description):
+            filtered_repos.append(repo)
+    
+    return filtered_repos
 
 @app.route('/api/repositories')
 def repositories():
@@ -551,19 +597,15 @@ def repositories():
     try:
         # Get parameters
         sort = request.args.get('sort', 'updated')
-        # Remove the hardcoded limit - let it fetch all repositories
-        limit_param = request.args.get('limit')
-        limit = int(limit_param) if limit_param else None  # No limit by default
-        visibility = request.args.get('visibility', 'all')  # all, public, private
-        search_query = request.args.get('search', '').strip().lower()  # Search parameter
+        search_query = request.args.get('search', '').strip().lower()
         page = int(request.args.get('page', 1))
-        per_page = min(int(request.args.get('per_page', 30)), 100)  # Per page parameter
+        per_page = min(int(request.args.get('per_page', 30)), 100)
         
         # Table sorting parameters
-        table_sort = request.args.get('table_sort')  # Field to sort by
-        table_sort_direction = request.args.get('table_sort_direction', 'asc')  # Sort direction
+        table_sort = request.args.get('table_sort')
+        table_sort_direction = request.args.get('table_sort_direction', 'asc')
         
-        print(f"[DEBUG] Parameters - sort: {sort}, limit: {limit}, visibility: {visibility}, search: '{search_query}', page: {page}, per_page: {per_page}, table_sort: {table_sort}, table_sort_direction: {table_sort_direction}")
+        print(f"[DEBUG] Parameters - sort: {sort}, search: '{search_query}', page: {page}, per_page: {per_page}, table_sort: {table_sort}, table_sort_direction: {table_sort_direction}")
         
         # Check rate limit first (with short cache)
         rate_limit_cache_key = generate_cache_key('rate_limit', user_id)
@@ -580,31 +622,23 @@ def repositories():
         if not rate_limit_ok:
             return jsonify({'error': 'Rate limit too low, please try again later'}), 429
         
-        print(f"[DEBUG] Fetching repositories using cached method...")
+        print(f"[DEBUG] Fetching repositories using single cache method...")
         fetch_start = time.time()
         
-        # Get cached repositories
-        all_repositories = get_cached_repositories(access_token, user_id, sort, limit, visibility)
+        # Get all repositories from single cache
+        all_repositories = get_all_user_repositories(access_token, user_id)
         
         # Apply search filter if needed
         if search_query:
-            filtered_repos = []
-            for repo in all_repositories:
-                repo_name = repo['name'].lower()
-                repo_full_name = repo['full_name'].lower()
-                repo_description = (repo['description'] or '').lower()
-                
-                if (search_query in repo_name or 
-                    search_query in repo_full_name or 
-                    search_query in repo_description):
-                    filtered_repos.append(repo)
-            
-            all_repositories = filtered_repos
+            all_repositories = filter_repositories_backend(all_repositories, search_query)
         
-        # Apply table sorting if specified (from cache, no API call needed)
-        if table_sort:
-            print(f"[DEBUG] Applying table sort: {table_sort} {table_sort_direction}")
-            all_repositories = sort_repositories_from_cache(all_repositories, table_sort, table_sort_direction)
+        # Apply sorting (table sorting takes precedence)
+        all_repositories = sort_repositories_backend(
+            all_repositories, 
+            sort=sort, 
+            table_sort=table_sort, 
+            table_sort_direction=table_sort_direction
+        )
         
         # Calculate pagination
         start_idx = (page - 1) * per_page
@@ -635,6 +669,7 @@ def repositories():
                 'repos_total': len(all_repositories),
                 'repos_returned': len(paginated_repos),
                 'cache_enabled': True,
+                'single_cache_strategy': True,
                 'table_sort_applied': bool(table_sort)
             }
         }
@@ -776,7 +811,6 @@ def cache_status():
             'cache_timeout_short': CACHE_TIMEOUT_SHORT,
             'cache_timeout_medium': CACHE_TIMEOUT_MEDIUM,
             'cache_timeout_long': CACHE_TIMEOUT_LONG,
-            'cache_timeout_very_long': CACHE_TIMEOUT_VERY_LONG,
             'redis_configured': cache_type == 'redis'
         })
     except Exception as e:
@@ -795,9 +829,17 @@ def clear_cache():
         return jsonify({'error': 'User ID not found'}), 400
     
     try:
+        # Get cache type to clear from request
+        cache_type = request.json.get('cache_type') if request.json else None
+        
         # Clear user-specific cache
-        invalidate_user_cache(user_id)
-        return jsonify({'message': 'Cache cleared successfully'})
+        invalidate_user_cache(user_id, cache_type)
+        
+        message = f'Cache cleared successfully'
+        if cache_type:
+            message = f'{cache_type.title()} cache cleared successfully'
+            
+        return jsonify({'message': message})
     except Exception as e:
         return jsonify({'error': f'Failed to clear cache: {str(e)}'}), 500
 
@@ -938,44 +980,6 @@ def test_session():
         'session_keys': list(session.keys()),
         'test_value': session.get('test_value')
     })
-
-def sort_repositories_from_cache(repositories, sort_field, sort_direction='asc'):
-    """Sort repositories based on field and direction"""
-    def get_sort_value(repo, field):
-        value = repo.get(field)
-        
-        # Handle null/undefined values
-        if value is None:
-            return ''
-        
-        # Special handling for different field types
-        if field == 'name':
-            return value.lower() if value else ''
-        elif field == 'language':
-            return value.lower() if value else ''
-        elif field == 'updated_at':
-            try:
-                return value  # ISO format strings sort correctly
-            except:
-                return ''
-        elif field in ['stargazers_count', 'forks_count', 'size']:
-            try:
-                return int(value) if value is not None else 0
-            except:
-                return 0
-        else:
-            return value or ''
-    
-    try:
-        sorted_repos = sorted(
-            repositories, 
-            key=lambda repo: get_sort_value(repo, sort_field),
-            reverse=(sort_direction == 'desc')
-        )
-        return sorted_repos
-    except Exception as e:
-        logger.error(f"Error sorting repositories: {e}")
-        return repositories
 
 if __name__ == '__main__':
     print(f"[DEBUG] Starting Flask app...")
