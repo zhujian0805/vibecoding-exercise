@@ -533,7 +533,11 @@ def repositories():
         page = int(request.args.get('page', 1))
         per_page = min(int(request.args.get('per_page', 30)), 100)  # Per page parameter
         
-        print(f"[DEBUG] Parameters - sort: {sort}, limit: {limit}, visibility: {visibility}, search: '{search_query}', page: {page}, per_page: {per_page}")
+        # Table sorting parameters
+        table_sort = request.args.get('table_sort')  # Field to sort by
+        table_sort_direction = request.args.get('table_sort_direction', 'asc')  # Sort direction
+        
+        print(f"[DEBUG] Parameters - sort: {sort}, limit: {limit}, visibility: {visibility}, search: '{search_query}', page: {page}, per_page: {per_page}, table_sort: {table_sort}, table_sort_direction: {table_sort_direction}")
         
         # Check rate limit first (with short cache)
         rate_limit_cache_key = generate_cache_key('rate_limit', user_id)
@@ -571,6 +575,11 @@ def repositories():
             
             all_repositories = filtered_repos
         
+        # Apply table sorting if specified (from cache, no API call needed)
+        if table_sort:
+            print(f"[DEBUG] Applying table sort: {table_sort} {table_sort_direction}")
+            all_repositories = sort_repositories_from_cache(all_repositories, table_sort, table_sort_direction)
+        
         # Calculate pagination
         start_idx = (page - 1) * per_page
         end_idx = start_idx + per_page
@@ -592,12 +601,15 @@ def repositories():
             'has_next': end_idx < len(all_repositories),
             'has_prev': page > 1,
             'search_query': search_query,
+            'table_sort': table_sort,
+            'table_sort_direction': table_sort_direction,
             'debug_info': {
                 'processing_time': total_time,
                 'fetch_time': fetch_time,
                 'repos_total': len(all_repositories),
                 'repos_returned': len(paginated_repos),
-                'cache_enabled': True
+                'cache_enabled': True,
+                'table_sort_applied': bool(table_sort)
             }
         }
         
@@ -900,6 +912,44 @@ def test_session():
         'session_keys': list(session.keys()),
         'test_value': session.get('test_value')
     })
+
+def sort_repositories_from_cache(repositories, sort_field, sort_direction='asc'):
+    """Sort repositories based on field and direction"""
+    def get_sort_value(repo, field):
+        value = repo.get(field)
+        
+        # Handle null/undefined values
+        if value is None:
+            return ''
+        
+        # Special handling for different field types
+        if field == 'name':
+            return value.lower() if value else ''
+        elif field == 'language':
+            return value.lower() if value else ''
+        elif field == 'updated_at':
+            try:
+                return value  # ISO format strings sort correctly
+            except:
+                return ''
+        elif field in ['stargazers_count', 'forks_count', 'size']:
+            try:
+                return int(value) if value is not None else 0
+            except:
+                return 0
+        else:
+            return value or ''
+    
+    try:
+        sorted_repos = sorted(
+            repositories, 
+            key=lambda repo: get_sort_value(repo, sort_field),
+            reverse=(sort_direction == 'desc')
+        )
+        return sorted_repos
+    except Exception as e:
+        logger.error(f"Error sorting repositories: {e}")
+        return repositories
 
 if __name__ == '__main__':
     print(f"[DEBUG] Starting Flask app...")

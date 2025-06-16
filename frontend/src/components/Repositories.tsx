@@ -35,6 +35,8 @@ interface RepositoriesResponse {
   has_next: boolean;
   has_prev: boolean;
   search_query: string;
+  table_sort?: string;
+  table_sort_direction?: string;
 }
 
 type SortField = 'name' | 'language' | 'stargazers_count' | 'forks_count' | 'size' | 'updated_at';
@@ -71,11 +73,17 @@ const Repositories: React.FC = () => {
         sort: sortBy
       });
       
+      // Include table sorting parameters if they exist
+      if (currentSort.field) {
+        params.append('table_sort', currentSort.field);
+        params.append('table_sort_direction', currentSort.direction);
+      }
+      
       if (searchQuery.trim()) {
         params.append('search', searchQuery.trim());
       }
       
-      console.log(`[DEBUG] Fetching repositories - Page: ${page}, Per Page: ${perPage}, Sort: ${sortBy}`);
+      console.log(`[DEBUG] Fetching repositories - Page: ${page}, Per Page: ${perPage}, Sort: ${sortBy}, Table Sort: ${currentSort.field}:${currentSort.direction}`);
       
       const response = await axios.get<RepositoriesResponse>(
         `${API_BASE_URL}/api/repositories?${params.toString()}`,
@@ -89,15 +97,17 @@ const Repositories: React.FC = () => {
       setTotalCount(response.data.total_count);
       setHasNext(response.data.has_next);
       setHasPrev(response.data.has_prev);
-      // Reset client-side sorting when fetching new data
-      setCurrentSort({ field: null, direction: 'asc' });
+      // Don't reset client-side sorting when fetching with existing sort parameters
+      if (!currentSort.field) {
+        setCurrentSort({ field: null, direction: 'asc' });
+      }
     } catch (err) {
       setError('Failed to fetch repositories');
       console.error('Error fetching repositories:', err);
     } finally {
       setLoading(false);
     }
-  }, [page, perPage, sortBy, searchQuery]);
+  }, [page, perPage, sortBy, searchQuery, currentSort.field, currentSort.direction]);
 
   useEffect(() => {
     fetchRepositories();
@@ -165,8 +175,8 @@ const Repositories: React.FC = () => {
     return colors[language] || '#586069';
   };
 
-  // Handle table column sorting
-  const handleSort = (field: SortField) => {
+  // Handle table column sorting - now sends request to backend
+  const handleSort = async (field: SortField) => {
     let direction: SortDirection = 'asc';
     
     // Toggle direction if clicking the same field
@@ -174,49 +184,43 @@ const Repositories: React.FC = () => {
       direction = 'desc';
     }
 
-    const sortedRepos = [...repositories].sort((a, b) => {
-      let aValue: any = a[field];
-      let bValue: any = b[field];
-
-      // Handle null/undefined values
-      if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return direction === 'asc' ? 1 : -1;
-      if (bValue == null) return direction === 'asc' ? -1 : 1;
-
-      // Special handling for different field types
-      switch (field) {
-        case 'name':
-          aValue = aValue.toLowerCase();
-          bValue = bValue.toLowerCase();
-          break;
-        case 'language':
-          aValue = aValue ? aValue.toLowerCase() : '';
-          bValue = bValue ? bValue.toLowerCase() : '';
-          break;
-        case 'updated_at':
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-          break;
-        case 'stargazers_count':
-        case 'forks_count':
-        case 'size':
-          aValue = Number(aValue) || 0;
-          bValue = Number(bValue) || 0;
-          break;
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        sort: sortBy,
+        table_sort: field,
+        table_sort_direction: direction
+      });
+      
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
       }
-
-      let comparison = 0;
-      if (aValue > bValue) {
-        comparison = 1;
-      } else if (aValue < bValue) {
-        comparison = -1;
-      }
-
-      return direction === 'desc' ? -comparison : comparison;
-    });
-
-    setRepositories(sortedRepos);
-    setCurrentSort({ field, direction });
+      
+      console.log(`[DEBUG] Sorting repositories - Field: ${field}, Direction: ${direction}`);
+      
+      const response = await axios.get<RepositoriesResponse>(
+        `${API_BASE_URL}/api/repositories?${params.toString()}`,
+        { withCredentials: true }
+      );
+      
+      console.log(`[DEBUG] Sort response received - Total: ${response.data.total_count}, Current page: ${response.data.page}`);
+      
+      setRepositories(response.data.repositories);
+      setTotalPages(response.data.total_pages);
+      setTotalCount(response.data.total_count);
+      setHasNext(response.data.has_next);
+      setHasPrev(response.data.has_prev);
+      setCurrentSort({ field, direction });
+    } catch (err) {
+      setError('Failed to sort repositories');
+      console.error('Error sorting repositories:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Get sort icon for table headers
@@ -307,7 +311,11 @@ const Repositories: React.FC = () => {
               Sort by:
               <select 
                 value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  // Reset table sorting when main sort changes
+                  setCurrentSort({ field: null, direction: 'asc' });
+                }}
                 className="sort-select"
               >
                 <option value="updated">Recently Updated</option>
