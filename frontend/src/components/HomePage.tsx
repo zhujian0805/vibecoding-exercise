@@ -11,6 +11,7 @@ interface User {
   blog: string;
   twitter_username: string;
   public_repos: number;
+  total_repos: number;
   followers: number;
   following: number;
   created_at: string;

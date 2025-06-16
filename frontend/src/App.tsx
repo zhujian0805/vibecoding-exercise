@@ -25,6 +25,7 @@ interface User {
   blog: string;
   twitter_username: string;
   public_repos: number;
+  total_repos: number;
   followers: number;
   following: number;
   created_at: string;
@@ -73,7 +74,7 @@ function App() {
       const userData = response.data.user;
       
       // Check if we have complete profile data (with statistics)
-      if (userData && typeof userData.public_repos === 'number') {
+      if (userData && (typeof userData.total_repos === 'number' || typeof userData.public_repos === 'number')) {
         // We have complete data from session
         setAuthState({
           authenticated: true,

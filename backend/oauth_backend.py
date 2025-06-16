@@ -185,6 +185,31 @@ def get_user():
     
     user = session.get('user')
     if user:
+        # Check if total_repos is missing and update if needed
+        if 'total_repos' not in user:
+            logger.debug(f"[DEBUG] total_repos missing from user session, attempting to update...")
+            access_token = session.get('access_token')
+            if access_token:
+                try:
+                    # Get total repository count using GitHub API
+                    g = Github(access_token)
+                    github_user = g.get_user()
+                    repo_list = github_user.get_repos()
+                    total_repos = repo_list.totalCount
+                    
+                    # Update session with total_repos
+                    user['total_repos'] = total_repos
+                    session['user'] = user
+                    session.permanent = True
+                    
+                    logger.debug(f"[DEBUG] Updated user session with total_repos: {total_repos}")
+                except Exception as e:
+                    logger.warning(f"[WARNING] Failed to fetch total_repos for user update: {e}")
+                    # Fallback to public_repos if available
+                    user['total_repos'] = user.get('public_repos', 0)
+                    session['user'] = user
+                    session.permanent = True
+        
         response_data = {'authenticated': True, 'user': user}
         logger.debug(f"[DEBUG] get_user() returning data: {json.dumps(response_data, indent=2, default=str)}")
         print(f"[DEBUG] get_user() return object: {json.dumps(response_data, indent=2, default=str)}")
@@ -263,6 +288,15 @@ def callback():
         
         logger.debug(f"[DEBUG] GitHub user fetched: {user.login}")
         
+        # Get total repository count (public + private) using totalCount
+        try:
+            repo_list = user.get_repos()
+            total_repos = repo_list.totalCount
+            logger.debug(f"[DEBUG] Found {total_repos} total repositories for user {user.login} using totalCount")
+        except Exception as e:
+            logger.warning(f"[WARNING] Failed to fetch total repo count for {user.login}: {e}")
+            total_repos = user.public_repos  # fallback to public repos count
+        
         # Convert full user info to dict for session storage
         user_json = {
             'login': user.login,
@@ -276,6 +310,7 @@ def callback():
             'blog': user.blog,
             'twitter_username': getattr(user, 'twitter_username', None),
             'public_repos': user.public_repos,
+            'total_repos': total_repos,
             'followers': user.followers,
             'following': user.following,
             'created_at': user.created_at.isoformat() if user.created_at else None,
@@ -283,8 +318,13 @@ def callback():
             'html_url': user.html_url
         }
         
+        # Ensure total_repos is included - debug logging
+        logger.debug(f"[DEBUG] Creating user_json with total_repos: {total_repos}")
+        logger.debug(f"[DEBUG] user_json after creation: {json.dumps(user_json, indent=2, default=str)}")
+        
         logger.debug(f"OAuth callback - storing user data for {user.login}")
         logger.debug(f"  public_repos: {user_json['public_repos']}")
+        logger.debug(f"  total_repos: {user_json['total_repos']}")
         logger.debug(f"  followers: {user_json['followers']}")
         logger.debug(f"  following: {user_json['following']}")
         
@@ -342,6 +382,15 @@ def profile():
         # Get authenticated user information
         user = g.get_user()
         
+        # Get total repository count (public + private) using totalCount
+        try:
+            repo_list = user.get_repos()
+            total_repos = repo_list.totalCount
+            logger.debug(f"[DEBUG] Found {total_repos} total repositories for user {user.login} using totalCount")
+        except Exception as e:
+            logger.warning(f"[WARNING] Failed to fetch total repo count for {user.login}: {e}")
+            total_repos = user.public_repos  # fallback to public repos count
+        
         # Extract relevant user information
         user_info = {
             'login': user.login,
@@ -354,6 +403,7 @@ def profile():
             'blog': user.blog,
             'twitter_username': user.twitter_username,
             'public_repos': user.public_repos,
+            'total_repos': total_repos,
             'followers': user.followers,
             'following': user.following,
             'created_at': user.created_at.isoformat() if user.created_at else None,
@@ -364,6 +414,7 @@ def profile():
         # Debug logging
         logger.debug(f"Profile data for user {user.login}:")
         logger.debug(f"  public_repos: {user_info['public_repos']} (type: {type(user_info['public_repos'])})")
+        logger.debug(f"  total_repos: {user_info['total_repos']} (type: {type(user_info['total_repos'])})")
         logger.debug(f"  followers: {user_info['followers']} (type: {type(user_info['followers'])})")
         logger.debug(f"  following: {user_info['following']} (type: {type(user_info['following'])})")
         

@@ -12,6 +12,7 @@ interface User {
   blog: string;
   twitter_username: string;
   public_repos: number;
+  total_repos: number;
   followers: number;
   following: number;
   created_at: string;
@@ -33,6 +34,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => 
     if (user) {
       console.log('User data received in UserProfile:', user);
       console.log('Type of public_repos:', typeof user.public_repos, 'Value:', user.public_repos);
+      console.log('Type of total_repos:', typeof user.total_repos, 'Value:', user.total_repos);
       console.log('Type of followers:', typeof user.followers, 'Value:', user.followers);
       console.log('Type of following:', typeof user.following, 'Value:', user.following);
       
@@ -119,7 +121,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => 
             onClick={() => navigate('/repositories')}
             title="View repositories"
           >
-            <strong>{(user.public_repos ?? 0).toLocaleString()}</strong>
+            <strong>{(user.total_repos ?? 0).toLocaleString()}</strong>
             <span>REPOSITORIES</span>
           </div>
           <div 
