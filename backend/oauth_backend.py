@@ -122,7 +122,7 @@ def invalidate_user_cache(user_id, prefix=None):
     try:
         if prefix:
             # Clear specific cache type for user
-            cache_key = generate_cache_key(prefix, user_id)
+            cache_key = generate_cache_key(prefix, user_idfuture
             cache.delete(cache_key)
             logger.debug(f"Cache invalidated for key: {cache_key}")
         else:
@@ -470,7 +470,7 @@ def get_all_user_repositories(access_token, user_id):
         
         # Process repositories in parallel
         all_repositories = []
-        max_workers = min(10, len(repo_objects))
+        max_workers = min(100, len(repo_objects))
         
         if repo_objects:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
