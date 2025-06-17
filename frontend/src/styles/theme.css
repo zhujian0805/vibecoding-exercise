@@ -1,0 +1,25 @@
+/* Theme Toggle Styles */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--surface-variant);
+  border-color: var(--outline-variant);
+  color: var(--on-surface);
+}
+
+.theme-toggle:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}

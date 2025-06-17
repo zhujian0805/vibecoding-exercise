@@ -1,0 +1,95 @@
+/* Repository Controls Styles */
+
+/* Main Controls Section */
+.repositories-controls {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--spacing-md);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--outline-variant);
+}
+
+/* Compact Controls Section */
+.repositories-compact-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--spacing-md);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--outline-variant);
+}
+
+.repositories-compact-controls .search-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin: 0;
+  flex: 1;
+  max-width: 500px;
+}
+
+.repositories-compact-controls .search-input-container {
+  flex: 1;
+}
+
+.repositories-compact-controls .control-group {
+  flex-shrink: 0;
+}
+
+/* Control Groups */
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.control-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--on-surface);
+  font-weight: 500;
+}
+
+/* Sort Controls */
+.sort-select {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-color);
+  font-size: var(--font-size-small);
+  color: var(--on-surface);
+  transition: all 0.2s ease;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Per-page Controls */
+.per-page-select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.per-page-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}

@@ -1,0 +1,79 @@
+/* Login Container and Card */
+.login-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  width: 100%;
+  padding: var(--spacing-xl);
+}
+
+.login-card {
+  background-color: var(--surface-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: var(--spacing-2xl);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  border: 1px solid var(--outline-variant);
+}
+
+.login-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 400;
+  color: var(--on-surface);
+  margin-bottom: var(--spacing-2xl);
+  margin-top: 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: var(--spacing-xl) 0;
+  color: var(--on-surface-variant);
+  font-size: var(--font-size-small);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--outline-variant);
+}
+
+.divider span {
+  padding: 0 var(--spacing-md);
+  font-size: var(--font-size-small);
+  color: var(--on-surface-variant);
+}
+
+.demo-hint {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background-color: var(--surface-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+  color: var(--on-surface-variant);
+}
+
+.demo-hint p {
+  margin: var(--spacing-xs) 0;
+}
+
+.demo-hint code {
+  background-color: var(--surface-container);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  color: var(--on-surface);
+  font-size: 0.875em;
+}

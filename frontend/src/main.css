@@ -1,0 +1,35 @@
+/* Main CSS - Imports all modular stylesheets */
+/* Import in order of specificity - variables first, then base, then components */
+
+/* CSS Variables and Theme */
+@import './styles/variables.css';
+
+/* Base Styles */
+@import './styles/base.css';
+
+/* Layout Components */
+@import './styles/navigation.css';
+
+/* UI Components */
+@import './styles/buttons.css';
+@import './styles/cards.css';
+@import './styles/forms.css';
+@import './styles/loading.css';
+@import './styles/error.css';
+@import './styles/theme.css';
+@import './styles/pagination.css';
+
+/* Page-specific Styles */
+@import './styles/login.css';
+@import './styles/homepage.css';
+@import './styles/profile.css';
+@import './styles/repositories.css';
+@import './styles/repository-controls.css';
+@import './styles/repository-table-cells.css';
+@import './styles/followers.css';
+
+/* Utilities */
+@import './styles/utilities.css';
+
+/* Responsive Design */
+@import './styles/responsive.css';

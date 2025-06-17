@@ -1,0 +1,252 @@
+/* Button Styles */
+.btn, .logout-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  text-decoration: none;
+  min-height: 36px;
+}
+
+.btn:hover, .logout-btn:hover {
+  background-color: var(--primary-hover);
+  box-shadow: var(--shadow-1);
+}
+
+.btn:focus, .logout-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  background-color: var(--surface-color);
+  color: var(--primary-color);
+  border: 1px solid var(--outline);
+}
+
+.btn-secondary:hover {
+  background-color: var(--surface-variant);
+  border-color: var(--primary-color);
+}
+
+.refresh-btn {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.refresh-btn:hover {
+  background-color: var(--success-color);
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-1);
+}
+
+.github-link-btn {
+  background-color: var(--on-surface-variant);
+  color: white;
+}
+
+.github-link-btn:hover {
+  background-color: var(--on-surface-variant);
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-1);
+}
+
+.logout-btn {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.logout-btn:hover {
+  background-color: var(--error-color);
+  filter: brightness(1.1);
+  box-shadow: var(--shadow-1);
+}
+
+.github-oauth-btn {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  border: 1px solid var(--outline);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  transition: all 0.2s ease;
+  width: 100%;
+  font-weight: 500;
+}
+
+.github-oauth-btn:hover {
+  background-color: var(--surface-variant);
+  border-color: var(--outline-variant);
+  box-shadow: var(--shadow-1);
+}
+
+.github-oauth-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.github-oauth-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.login-btn {
+  background-color: var(--on-surface-variant);
+  color: var(--surface-color);
+  border: none;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: not-allowed;
+  opacity: 0.6;
+  margin-top: var(--spacing-sm);
+  transition: all 0.2s ease;
+}
+
+.action-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-small);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.view-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.view-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.clone-btn {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.clone-btn:hover {
+  background-color: var(--success-color);
+  filter: brightness(1.1);
+}
+
+.search-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-small);
+  height: 36px;
+  min-width: 70px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.search-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: var(--spacing-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  font-size: var(--font-size-base);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.retry-btn {
+  margin-left: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.page-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--outline);
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-small);
+  transition: all 0.2s ease;
+  min-width: 40px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: var(--surface-variant);
+  border-color: var(--outline-variant);
+}
+
+.page-btn:disabled {
+  background-color: var(--surface-variant);
+  color: var(--on-surface-variant);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.page-btn.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.page-btn.active:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.first-btn,
+.last-btn {
+  font-weight: 600;
+}

@@ -1,0 +1,122 @@
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .repositories-header {
+    gap: var(--spacing-md);
+  }
+
+  /* Compact controls responsive */
+  .repositories-compact-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+
+  .repositories-compact-controls .search-form {
+    max-width: none;
+    width: 100%;
+  }
+
+  .repositories-compact-controls .control-group {
+    justify-content: space-between;
+  }
+
+  .repositories-compact-controls {
+    padding: var(--spacing-sm);
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input-container {
+    max-width: 100%;
+  }
+  
+  .repositories-controls {
+    justify-content: flex-start;
+    padding: var(--spacing-sm);
+  }
+  
+  .control-group {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: flex-start;
+  }
+  
+  .control-group label {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .repositories {
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .main-content {
+    padding: var(--spacing-md);
+  }
+  
+  .repositories-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .search-form {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  .search-input-container {
+    max-width: 100%;
+  }
+  
+  .repositories-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  /* Hide some columns on mobile */
+  .size-cell,
+  .language-cell {
+    display: none;
+  }
+  
+  .repo-name-cell {
+    width: 35%;
+  }
+  
+  .repo-description-cell {
+    width: 40%;
+  }
+  
+  .stars-cell,
+  .forks-cell {
+    width: 8%;
+  }
+  
+  .updated-cell {
+    width: 12%;
+  }
+  
+  .actions-cell {
+    width: 15%;
+  }
+}
+
+/* Improved spacing consistency */
+.repositories-header > * + * {
+  margin-top: 0;
+}
+
+.repositories-compact-controls,
+.repositories-controls {
+  box-shadow: var(--shadow-1);
+}
+
+.repositories-controls .control-group:not(:last-child) {
+  padding-right: var(--spacing-md);
+  border-right: 1px solid var(--outline-variant);
+}
