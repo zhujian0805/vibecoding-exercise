@@ -70,6 +70,11 @@ class RepositoryRepository:
             total_repos = self.get_total_repo_count()
             actual_limit = min(total_repos, max_repos)
             
+            # Return empty list if no repositories to fetch
+            if actual_limit == 0:
+                logger.debug("No repositories to fetch")
+                return []
+            
             per_page = 100  # GitHub's maximum per page
             num_pages = (actual_limit + per_page - 1) // per_page  # Ceiling division
             

@@ -11,6 +11,7 @@ import UserProfile from './components/UserProfile';
 import Repositories from './components/Repositories';
 import Following from './components/Following';
 import Followers from './components/Followers';
+import Gists from './components/Gists';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -231,6 +232,14 @@ function App() {
                 element={
                   <ProtectedRoute isAuthenticated={authState.authenticated}>
                     <Followers />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/gists" 
+                element={
+                  <ProtectedRoute isAuthenticated={authState.authenticated}>
+                    <Gists />
                   </ProtectedRoute>
                 } 
               />

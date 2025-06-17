@@ -10,6 +10,7 @@ from config import settings
 from services.cache_service import CacheManager
 from controllers.auth_controller import AuthController
 from controllers.repository_controller import RepositoryController
+from controllers.gist_controller import GistController
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,10 @@ class ApplicationFactory:
         # Repository controller
         repo_controller = RepositoryController(cache_manager)
         app.register_blueprint(repo_controller.blueprint)
+        
+        # Gist controller
+        gist_controller = GistController(cache_manager)
+        app.register_blueprint(gist_controller.blueprint)
     
     @staticmethod
     def _setup_additional_routes(app: Flask, cache_manager: CacheManager):

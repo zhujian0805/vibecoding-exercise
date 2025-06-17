@@ -26,6 +26,7 @@
 @import './styles/repositories.css';
 @import './styles/repository-controls.css';
 @import './styles/repository-table-cells.css';
+@import './styles/gists.css';
 @import './styles/followers.css';
 
 /* Utilities */
