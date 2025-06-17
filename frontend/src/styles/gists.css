@@ -87,11 +87,31 @@
 
 .sort-select {
   padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background: var(--input-background);
-  color: var(--text-primary);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-color);
+  color: var(--on-surface);
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Fix dropdown options visibility in dark mode */
+.sort-select option {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+[data-theme="dark"] .sort-select option:hover,
+[data-theme="dark"] .sort-select option:checked {
+  background-color: var(--surface-variant);
+  color: var(--on-surface);
 }
 
 /* Gists Grid */

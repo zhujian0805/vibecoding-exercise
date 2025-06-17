@@ -136,6 +136,19 @@
   box-shadow: 0 0 0 2px var(--primary-light);
 }
 
+/* Fix dropdown options visibility for per-page select in dark mode */
+.per-page-select option {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+[data-theme="dark"] .per-page-select option:hover,
+[data-theme="dark"] .per-page-select option:checked {
+  background-color: var(--surface-variant);
+  color: var(--on-surface);
+}
+
 .sort-select {
   padding: var(--spacing-sm);
   border: 1px solid var(--outline);
@@ -144,10 +157,24 @@
   font-size: var(--font-size-small);
   color: var(--on-surface);
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .sort-select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Fix dropdown options visibility for sort select in dark mode */
+.sort-select option {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+[data-theme="dark"] .sort-select option:hover,
+[data-theme="dark"] .sort-select option:checked {
+  background-color: var(--surface-variant);
+  color: var(--on-surface);
 }

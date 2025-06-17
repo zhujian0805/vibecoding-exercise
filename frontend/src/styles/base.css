@@ -13,6 +13,25 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Global Select Styling for Dark Mode Compatibility */
+select {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  border: 1px solid var(--outline);
+}
+
+select option {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+}
+
+/* Enhanced dark mode option styling */
+[data-theme="dark"] select option:hover,
+[data-theme="dark"] select option:checked {
+  background-color: var(--surface-variant);
+  color: var(--on-surface);
+}
+
 .App {
   min-height: 100vh;
   display: flex;
