@@ -3,9 +3,7 @@ Gist service for GitHub API operations using Repository pattern
 """
 import os
 import logging
-import requests
 from typing import List, Optional
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from github import Github, GithubException
 from models.gist import Gist
 
@@ -29,93 +27,44 @@ class GistRepository:
             logger.warning(f"Failed to get total gist count: {e}")
             return 0
     
-    def fetch_gists_page(self, page: int, per_page: int = 100) -> List[dict]:
-        """Fetch a single page of gists using direct API call"""
-        try:
-            url = f"https://api.github.com/gists"
-            headers = {
-                'Authorization': f'token {self.access_token}',
-                'Accept': 'application/vnd.github.v3+json'
-            }
-            params = {
-                'per_page': per_page,
-                'page': page
-            }
-            
-            response = requests.get(url, headers=headers, params=params, timeout=30)
-            response.raise_for_status()
-            
-            return response.json()
-            
-        except Exception as e:
-            logger.error(f"Failed to fetch gists page {page}: {e}")
-            return []
-    
     def get_all_gists(self, user_id: int, max_gists: Optional[int] = None) -> List[Gist]:
-        """Get all gists with parallel page fetching"""
+        """Get all gists using GitHub library"""
         if max_gists is None:
             max_gists = int(os.environ.get('MAX_GISTS_FETCH', '1000'))
         
         try:
-            # Get total count and calculate pages needed
-            total_gists = self.get_total_gist_count()
-            actual_limit = min(total_gists, max_gists)
+            # Get the authenticated user
+            user = self.github_client.get_user()
             
-            # Return empty list if no gists to fetch
-            if actual_limit == 0:
-                logger.debug("No gists to fetch")
-                return []
+            # Get gists using PyGithub
+            github_gists = user.get_gists()
             
-            per_page = 100  # GitHub's maximum per page
-            num_pages = (actual_limit + per_page - 1) // per_page  # Ceiling division
-            
-            logger.debug(f"Fetching {actual_limit} gists across {num_pages} pages")
-            
-            # Fetch all pages in parallel
-            all_gist_data = []
-            max_workers = min(5, num_pages)  # Limit concurrent API calls
-            
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_to_page = {
-                    executor.submit(self.fetch_gists_page, page + 1, per_page): page + 1
-                    for page in range(num_pages)
-                }
-                
-                for future in as_completed(future_to_page):
-                    page = future_to_page[future]
-                    try:
-                        page_data = future.result()
-                        all_gist_data.extend(page_data)
-                        logger.debug(f"Fetched page {page}: {len(page_data)} gists")
-                    except Exception as e:
-                        logger.error(f"Failed to fetch page {page}: {e}")
-            
-            logger.debug(f"Fetched {len(all_gist_data)} gists from {num_pages} pages")
-            
-            # Convert to Gist objects in parallel
             gists = []
-            if all_gist_data:
-                def convert_to_gist(gist_data):
-                    try:
-                        return Gist.from_api_data(gist_data)
-                    except Exception as e:
-                        logger.warning(f"Failed to convert gist {gist_data.get('id', 'unknown')}: {e}")
-                        return None
-                
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    future_to_gist = {
-                        executor.submit(convert_to_gist, gist_data): gist_data
-                        for gist_data in all_gist_data
-                    }
-                    
-                    for future in as_completed(future_to_gist):
-                        gist = future.result()
-                        if gist:
-                            gists.append(gist)
+            count = 0
             
-            logger.debug(f"Successfully processed {len(gists)} gists")
+            logger.debug(f"Fetching up to {max_gists} gists using GitHub library")
+            
+            # Iterate through gists and convert to our Gist model
+            for github_gist in github_gists:
+                if count >= max_gists:
+                    break
+                    
+                try:
+                    # Convert GitHub gist object to our Gist model
+                    gist = Gist.from_github_gist(github_gist)
+                    gists.append(gist)
+                    count += 1
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to convert gist {github_gist.id}: {e}")
+                    continue
+            
+            logger.debug(f"Successfully fetched {len(gists)} gists")
             return gists
             
+        except GithubException as e:
+            logger.error(f"GitHub API error while fetching gists: {e}")
+            raise
         except Exception as e:
             logger.error(f"Failed to fetch gists: {e}")
             raise

@@ -41,7 +41,7 @@ class GitHubAuthStrategy(AuthenticationStrategy):
         self.auth_url = 'https://github.com/login/oauth/authorize'
         self.token_url = 'https://github.com/login/oauth/access_token'
     
-    def get_auth_url(self, callback_url: str, scope: str = "read:user repo") -> str:
+    def get_auth_url(self, callback_url: str, scope: str = "read:user repo gist") -> str:
         """Get GitHub OAuth authorization URL"""
         return f"{self.auth_url}?client_id={self.client_id}&scope={scope}&redirect_uri={callback_url}"
     
@@ -111,7 +111,7 @@ class AuthenticationService:
     def get_auth_url(self, callback_url: str, scope: str = None) -> str:
         """Get OAuth authorization URL"""
         if scope is None:
-            scope = "read:user repo"  # Default GitHub scope
+            scope = "read:user repo gist"  # Default GitHub scope with gist access
         return self._strategy.get_auth_url(callback_url, scope)
     
     def authenticate_user(self, code: str) -> tuple[str, User]:
