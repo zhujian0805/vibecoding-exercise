@@ -29,7 +29,7 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
   return (
     <div className="home-page">
       <div className="welcome-section">
-        <h1>Welcome to GitHub OAuth Demo</h1>
+        <h1>Welcome to Vibecoding Exercise</h1>
         {user ? (
           <div className="user-welcome">
             <img 

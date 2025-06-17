@@ -35,7 +35,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, error, onClearError }) =
 
       <div className="login-container">
         <div className="login-card">
-          <h1 className="login-title">GitHub OAuth Demo</h1>
+          <h1 className="login-title">Vibecoding Exercise</h1>
           
           <form className="login-form">
             <div className="form-group">

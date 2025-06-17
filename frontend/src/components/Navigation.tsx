@@ -22,7 +22,7 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
       <div className="nav-container">
         <div className="nav-brand">
           <Link to="/">
-            <h2>GitHub OAuth Demo</h2>
+            <h2>Vibecoding Exercise</h2>
           </Link>
         </div>
         

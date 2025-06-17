@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# GitHub OAuth Demo Launcher (Development Mode - Port 80)
+# Vibecoding Exercise Launcher (Development Mode - Port 80)
 
-echo "🚀 Starting GitHub OAuth Demo (Development Mode)..."
+echo "🚀 Starting Vibecoding Exercise (Development Mode)..."
 echo "=================================================="
 
 # Check if environment variables are set

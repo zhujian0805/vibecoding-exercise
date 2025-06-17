@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# GitHub OAuth Demo Launcher with Cache Support
+# Vibecoding Exercise Launcher with Cache Support
 
-echo "🚀 Starting GitHub OAuth Demo with Cache..."
+echo "🚀 Starting Vibecoding Exercise with Cache..."
 echo "============================================"
 
 # Check if environment variables are set
