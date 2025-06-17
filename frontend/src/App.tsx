@@ -60,9 +60,11 @@ function App() {
       const response = await axios.get(`${API_BASE_URL}/api/profile`);
       setAuthState(prev => ({
         ...prev,
-        user: response.data
+        user: response.data,
+        error: null
       }));
     } catch (error) {
+      console.error('Failed to fetch profile:', error);
       setAuthState(prev => ({
         ...prev,
         error: 'Failed to fetch profile'
@@ -76,7 +78,7 @@ function App() {
       const userData = response.data.user;
       
       // Check if we have complete profile data (with statistics)
-      if (userData && (typeof userData.total_repos === 'number' || typeof userData.public_repos === 'number')) {
+      if (userData && typeof userData.total_gists === 'number') {
         // We have complete data from session
         setAuthState({
           authenticated: true,
@@ -84,7 +86,7 @@ function App() {
           loading: false,
           error: null
         });
-      } else {
+      } else if (userData) {
         // Session data is incomplete, fetch full profile
         setAuthState({
           authenticated: true,
@@ -92,7 +94,24 @@ function App() {
           loading: false,
           error: null
         });
-        await fetchProfile();
+        // Fetch complete profile data
+        try {
+          const profileResponse = await axios.get(`${API_BASE_URL}/api/profile`);
+          setAuthState(prev => ({
+            ...prev,
+            user: profileResponse.data,
+            error: null
+          }));
+        } catch (profileError) {
+          console.error('Failed to fetch complete profile:', profileError);
+        }
+      } else {
+        setAuthState({
+          authenticated: false,
+          user: null,
+          loading: false,
+          error: null
+        });
       }
     } catch (error) {
       setAuthState({

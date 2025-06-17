@@ -135,6 +135,14 @@ class ApplicationFactory:
                     logger.warning(f"Failed to fetch total repo count: {e}")
                     total_repos = user.public_repos
                 
+                # Get total gist count
+                try:
+                    gist_list = user.get_gists()
+                    total_gists = gist_list.totalCount
+                except Exception as e:
+                    logger.warning(f"Failed to fetch total gist count: {e}")
+                    total_gists = 0
+                
                 user_info = {
                     'login': user.login,
                     'name': user.name,
@@ -147,6 +155,7 @@ class ApplicationFactory:
                     'twitter_username': user.twitter_username,
                     'public_repos': user.public_repos,
                     'total_repos': total_repos,
+                    'total_gists': total_gists,
                     'followers': user.followers,
                     'following': user.following,
                     'created_at': user.created_at.isoformat() if user.created_at else None,
