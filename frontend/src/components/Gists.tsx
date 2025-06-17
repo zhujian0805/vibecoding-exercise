@@ -61,9 +61,11 @@ const Gists: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState('updated');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
 
   const fetchGists = async (pageNum: number = 1, search: string = '', sortBy: string = 'updated') => {
     setLoading(true);
@@ -72,7 +74,7 @@ const Gists: React.FC = () => {
     try {
       const params = new URLSearchParams({
         page: pageNum.toString(),
-        per_page: '20',
+        per_page: perPage.toString(),
         sort: sortBy,
         search: search.trim()
       });
@@ -97,7 +99,7 @@ const Gists: React.FC = () => {
 
   useEffect(() => {
     fetchGists(1, searchQuery, sort);
-  }, [searchQuery, sort]);
+  }, [searchQuery, sort, perPage]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +115,20 @@ const Gists: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
       fetchGists(newPage, searchQuery, sort);
+    }
+  };
+
+  const handleCopyGistUrl = async (cloneUrl: string, gistId: string) => {
+    try {
+      await navigator.clipboard.writeText(cloneUrl);
+      setCopyMessage(`Clone URL copied for gist ${gistId}!`);
+      setTimeout(() => setCopyMessage(null), 3000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+      setCopyMessage('Failed to copy clone URL');
+      setTimeout(() => setCopyMessage(null), 3000);
     }
   };
 
@@ -133,7 +148,7 @@ const Gists: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="gists-container">
+      <div className="repositories">
         <div className="loading">
           <div className="spinner"></div>
           <p>Loading gists...</p>
@@ -144,12 +159,11 @@ const Gists: React.FC = () => {
 
   if (error) {
     return (
-      <div className="gists-container">
-        <div className="error">
-          <h3>Error</h3>
-          <p>{error}</p>
-          <button onClick={() => fetchGists(1, searchQuery, sort)}>
-            Try Again
+      <div className="repositories">
+        <div className="error-message">
+          {error}
+          <button onClick={() => fetchGists(1, searchQuery, sort)} className="retry-btn">
+            Retry
           </button>
         </div>
       </div>
@@ -157,49 +171,98 @@ const Gists: React.FC = () => {
   }
 
   return (
-    <div className="gists-container">
-      <div className="gists-header">
-        <h2>Gists</h2>
-        <p>Your GitHub gists ({totalCount} total)</p>
-      </div>
-
-      {/* Search and Controls */}
-      <div className="gists-controls">
-        <form onSubmit={handleSearch} className="search-form">
-          <input
-            type="text"
-            placeholder="Search gists by description, filename, or language..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-          <button type="submit" className="search-button">
-            Search
-          </button>
-        </form>
-
-        <div className="sort-controls">
-          <label htmlFor="sort-select">Sort by:</label>
-          <select
-            id="sort-select"
-            value={sort}
-            onChange={(e) => handleSort(e.target.value)}
-            className="sort-select"
-          >
-            <option value="updated">Last Updated</option>
-            <option value="created">Created Date</option>
-            <option value="description">Description</option>
-            <option value="comments">Comments</option>
-            <option value="files">File Count</option>
-            <option value="public">Visibility</option>
-          </select>
+    <div className="repositories">
+      {copyMessage && (
+        <div className="copy-message">
+          {copyMessage}
         </div>
+      )}
+      
+      <div className="repositories-header">
+        <div className="repositories-title-row">
+          <h1>My Gists</h1>
+        </div>
+        
+        {/* Compact Controls Section - All in one frame */}
+        <div className="repositories-compact-controls">
+          <form onSubmit={handleSearch} className="search-form">
+            <div className="search-input-container">
+              <input
+                type="text"
+                placeholder="Search gists by description, filename, or language..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="clear-search-btn"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button type="submit" className="search-btn">
+              Search
+            </button>
+          </form>
+          
+          <div className="control-group">
+            <label>
+              Sort by:
+              <select 
+                value={sort} 
+                onChange={(e) => handleSort(e.target.value)}
+                className="sort-select"
+              >
+                <option value="updated">Last Updated</option>
+                <option value="created">Created Date</option>
+                <option value="description">Description</option>
+                <option value="comments">Comments</option>
+                <option value="files">File Count</option>
+                <option value="public">Visibility</option>
+              </select>
+            </label>
+          </div>
+          
+          <div className="control-group">
+            <label>
+              Items per page:
+              <select 
+                value={perPage} 
+                onChange={(e) => {
+                  const newPerPage = Number(e.target.value);
+                  setPerPage(newPerPage);
+                  setPage(1);
+                  fetchGists(1, searchQuery, sort);
+                }}
+                className="per-page-select"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        
+        {/* Search Results Info */}
+        {searchQuery && (
+          <div className="search-info">
+            Searching for: "<strong>{searchQuery}</strong>" 
+            ({totalCount} result{totalCount !== 1 ? 's' : ''})
+          </div>
+        )}
       </div>
 
-      {/* Gists List */}
       {gists.length === 0 ? (
-        <div className="no-gists">
-          <h3>No gists found</h3>
+        <div className="no-repositories">
+          <p>No gists found.</p>
           {searchQuery ? (
             <p>No gists match your search criteria. Try a different search term.</p>
           ) : (
@@ -209,95 +272,93 @@ const Gists: React.FC = () => {
       ) : (
         <>
           {/* Pagination controls above the table */}
-          {totalPages > 1 && (
-            <div className="pagination">
-              <div className="pagination-info">
-                Showing {((page - 1) * 20) + 1} to {Math.min(page * 20, totalCount)} of {totalCount} gists
-                {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+          <div className="pagination">
+            <div className="pagination-info">
+              Showing {((page - 1) * perPage) + 1} to {Math.min(page * perPage, totalCount)} of {totalCount} gists
+              {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+            </div>
+            
+            <div className="pagination-controls">
+              <button 
+                onClick={() => handlePageChange(1)}
+                disabled={page === 1}
+                className="page-btn first-btn"
+              >
+                First
+              </button>
+              <button 
+                onClick={() => handlePageChange(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="page-btn"
+              >
+                Previous
+              </button>
+              
+              <div className="page-numbers">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (page <= 3) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`page-btn ${page === pageNum ? 'active' : ''}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
               </div>
               
-              <div className="pagination-controls">
-                <button 
-                  onClick={() => setPage(1)}
-                  disabled={page === 1}
-                  className="page-btn first-btn"
-                >
-                  First
-                </button>
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="page-btn"
-                >
-                  Previous
-                </button>
-                
-                <div className="page-numbers">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`page-btn ${page === pageNum ? 'active' : ''}`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                <button 
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page === totalPages}
-                  className="page-btn"
-                >
-                  Next
-                </button>
-                <button 
-                  onClick={() => setPage(totalPages)}
-                  disabled={page === totalPages}
-                  className="page-btn last-btn"
-                >
-                  Last
-                </button>
-              </div>
+              <button 
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page === totalPages}
+                className="page-btn"
+              >
+                Next
+              </button>
+              <button 
+                onClick={() => handlePageChange(totalPages)}
+                disabled={page === totalPages}
+                className="page-btn last-btn"
+              >
+                Last
+              </button>
             </div>
-          )}
+          </div>
 
-          <div className="gists-table-container">
-            <table className="gists-table">
+          <div className="repositories-table-container">
+            <table className="repositories-table">
               <thead>
                 <tr>
-                  <th className="gist-description-cell">
+                  <th className="repo-name-cell">
                     <span>Description</span>
                   </th>
-                  <th className="gist-visibility-cell">
+                  <th className="language-cell">
                     <span>Visibility</span>
                   </th>
-                  <th className="gist-files-cell">
+                  <th className="stars-cell">
                     <span>Files</span>
                   </th>
-                  <th className="gist-languages-cell">
+                  <th className="forks-cell">
                     <span>Languages</span>
                   </th>
-                  <th className="gist-comments-cell">
+                  <th className="size-cell">
                     <span>💬</span>
                   </th>
-                  <th className="gist-updated-cell">
+                  <th className="updated-cell">
                     <span>Updated</span>
                   </th>
-                  <th className="gist-actions-cell">
+                  <th className="actions-cell">
                     <span>Actions</span>
                   </th>
                 </tr>
@@ -305,75 +366,74 @@ const Gists: React.FC = () => {
               <tbody>
                 {gists.map((gist) => (
                   <tr key={gist.id}>
-                    <td className="gist-description-cell">
-                      <div className="gist-description-container">
+                    <td className="repo-name-cell">
+                      <div className="repo-name-container">
                         <a 
                           href={gist.html_url || '#'} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="gist-description-link"
+                          className="repo-name-link"
                         >
                           {gist.description || 'Untitled Gist'}
                         </a>
-                        <div className="gist-id">
-                          ID: {gist.id}
+                        <div className="repo-badges">
+                          <span className="badge">ID: {gist.id}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="gist-visibility-cell">
-                      <span className={`visibility-badge ${gist.public ? 'public' : 'private'}`}>
-                        {gist.public ? 'Public' : 'Private'}
-                      </span>
+                    
+                    <td className="language-cell">
+                      <div className="language-info">
+                        <span className={`visibility-badge ${gist.public ? 'public' : 'private'}`}>
+                          {gist.public ? 'Public' : 'Private'}
+                        </span>
+                      </div>
                     </td>
-                    <td className="gist-files-cell">
-                      <div className="files-info">
-                        <span className="file-count">
+                    
+                    <td className="stars-cell">
+                      <div className="description-content">
+                        <span className="stat-value">
                           {gist.file_count} {gist.file_count === 1 ? 'file' : 'files'}
                         </span>
                         {gist.files.length > 0 && (
-                          <div className="file-list-compact">
+                          <div className="topic-tags">
                             {gist.files.slice(0, 2).map((file, index) => (
-                              <span key={index} className="file-name-compact">
+                              <span key={index} className="topic-tag">
                                 {file.filename}
                               </span>
                             ))}
                             {gist.files.length > 2 && (
-                              <span className="more-files-compact">
-                                +{gist.files.length - 2} more
+                              <span className="topic-tag more">
+                                +{gist.files.length - 2}
                               </span>
                             )}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="gist-languages-cell">
-                      <div className="languages-info">
-                        {getFileLanguages(gist.files)}
-                      </div>
+                    
+                    <td className="forks-cell">
+                      <span className="language-name">{getFileLanguages(gist.files)}</span>
                     </td>
-                    <td className="gist-comments-cell">
+                    
+                    <td className="size-cell">
                       {gist.comments > 0 ? (
-                        <span className="comment-count">{gist.comments}</span>
+                        <span className="stat-value">{gist.comments}</span>
                       ) : (
-                        <span className="no-comments">-</span>
+                        <span className="no-data">—</span>
                       )}
                     </td>
-                    <td className="gist-updated-cell">
-                      <div className="date-info">
-                        <div className="updated-date">
-                          {formatDate(gist.updated_at)}
-                        </div>
-                        <div className="created-date">
-                          Created: {formatDate(gist.created_at)}
-                        </div>
-                      </div>
+                    
+                    <td className="updated-cell">
+                      <span className="updated-date">{formatDate(gist.updated_at)}</span>
                     </td>
-                    <td className="gist-actions-cell">
-                      <div className="action-buttons">
+                    
+                    <td className="actions-cell">
+                      <div className="repo-actions">
                         <a 
                           href={gist.html_url || '#'} 
                           target="_blank" 
-                          rel="noopener noreferrer" 
+                          rel="noopener noreferrer"
                           className="action-btn view-btn"
                           title="View on GitHub"
                         >
@@ -381,11 +441,11 @@ const Gists: React.FC = () => {
                         </a>
                         {gist.git_pull_url && (
                           <button
-                            onClick={() => navigator.clipboard.writeText(gist.git_pull_url || '')}
-                            className="action-btn copy-btn"
+                            onClick={() => handleCopyGistUrl(gist.git_pull_url || '', gist.id)}
+                            className="action-btn clone-btn"
                             title="Copy clone URL"
                           >
-                            Copy URL
+                            Copy
                           </button>
                         )}
                       </div>
@@ -395,88 +455,7 @@ const Gists: React.FC = () => {
               </tbody>
             </table>
           </div>
-
-          {/* Pagination controls below the table */}
-          {totalPages > 1 && (
-            <div className="pagination">
-              <div className="pagination-info">
-                Showing {((page - 1) * 20) + 1} to {Math.min(page * 20, totalCount)} of {totalCount} gists
-                {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
-              </div>
-              
-              <div className="pagination-controls">
-                <button 
-                  onClick={() => setPage(1)}
-                  disabled={page === 1}
-                  className="page-btn first-btn"
-                >
-                  First
-                </button>
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="page-btn"
-                >
-                  Previous
-                </button>
-                
-                <div className="page-numbers">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`page-btn ${page === pageNum ? 'active' : ''}`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-                
-                <button 
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page === totalPages}
-                  className="page-btn"
-                >
-                  Next
-                </button>
-                <button 
-                  onClick={() => setPage(totalPages)}
-                  disabled={page === totalPages}
-                  className="page-btn last-btn"
-                >
-                  Last
-                </button>
-              </div>
-            </div>
-          )}
         </>
-      )}
-
-      {/* Debug Info */}
-      {debugInfo && (
-        <div className="debug-info">
-          <h4>Debug Information</h4>
-          <div className="debug-stats">
-            <span>Processing Time: {debugInfo.processing_time?.toFixed(3)}s</span>
-            <span>Fetch Time: {debugInfo.fetch_time?.toFixed(3)}s</span>
-            <span>Cache Enabled: {debugInfo.cache_enabled ? 'Yes' : 'No'}</span>
-            <span>Total Gists: {debugInfo.gists_total}</span>
-            <span>Returned: {debugInfo.gists_returned}</span>
-          </div>
-        </div>
       )}
     </div>
   );
