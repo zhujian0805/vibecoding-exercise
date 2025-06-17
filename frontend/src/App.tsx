@@ -27,6 +27,7 @@ interface User {
   twitter_username: string;
   public_repos: number;
   total_repos: number;
+  total_gists: number;
   followers: number;
   following: number;
   created_at: string;

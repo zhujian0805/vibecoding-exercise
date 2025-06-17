@@ -13,6 +13,7 @@ interface User {
   twitter_username: string;
   public_repos: number;
   total_repos: number;
+  total_gists: number;
   followers: number;
   following: number;
   created_at: string;
@@ -43,6 +44,9 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
                   <strong>{user.total_repos || user.public_repos || 0}</strong> repositories
                 </span>
                 <span className="stat-item">
+                  <strong>{user.total_gists || 0}</strong> gists
+                </span>
+                <span className="stat-item">
                   <strong>{user.followers || 0}</strong> followers
                 </span>
                 <span className="stat-item">
@@ -66,6 +70,10 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
           <Link to="/repositories" className="feature-card">
             <h3>Repositories</h3>
             <p>Browse all your GitHub repositories with detailed information and statistics.</p>
+          </Link>
+          <Link to="/gists" className="feature-card">
+            <h3>Gists</h3>
+            <p>View and manage your GitHub gists with search and sorting capabilities.</p>
           </Link>
           <Link to="/following" className="feature-card">
             <h3>Following</h3>

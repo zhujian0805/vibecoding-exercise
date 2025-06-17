@@ -20,6 +20,7 @@ class User:
     twitter_username: Optional[str] = None
     public_repos: int = 0
     total_repos: int = 0
+    total_gists: int = 0
     followers: int = 0
     following: int = 0
     created_at: Optional[str] = None
@@ -41,6 +42,7 @@ class User:
             'twitter_username': self.twitter_username,
             'public_repos': self.public_repos,
             'total_repos': self.total_repos,
+            'total_gists': self.total_gists,
             'followers': self.followers,
             'following': self.following,
             'created_at': self.created_at,
@@ -49,7 +51,7 @@ class User:
         }
 
     @classmethod
-    def from_github_user(cls, github_user, total_repos: int = None):
+    def from_github_user(cls, github_user, total_repos: Optional[int] = None, total_gists: Optional[int] = None):
         """Create User from PyGithub user object"""
         return cls(
             login=github_user.login,
@@ -64,6 +66,7 @@ class User:
             twitter_username=getattr(github_user, 'twitter_username', None),
             public_repos=github_user.public_repos,
             total_repos=total_repos or github_user.public_repos,
+            total_gists=total_gists or 0,
             followers=github_user.followers,
             following=github_user.following,
             created_at=github_user.created_at.isoformat() if github_user.created_at else None,

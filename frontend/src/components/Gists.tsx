@@ -208,107 +208,258 @@ const Gists: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="gists-grid">
-            {gists.map((gist) => (
-              <div key={gist.id} className="gist-card">
-                <div className="gist-header">
-                  <h3 className="gist-title">
-                    <a href={gist.html_url || '#'} target="_blank" rel="noopener noreferrer">
-                      {gist.description || 'Untitled Gist'}
-                    </a>
-                  </h3>
-                  <div className="gist-visibility">
-                    <span className={`visibility-badge ${gist.public ? 'public' : 'private'}`}>
-                      {gist.public ? 'Public' : 'Private'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="gist-meta">
-                  <div className="gist-stats">
-                    <span className="stat">
-                      <strong>{gist.file_count}</strong> {gist.file_count === 1 ? 'file' : 'files'}
-                    </span>
-                    {gist.comments > 0 && (
-                      <span className="stat">
-                        <strong>{gist.comments}</strong> {gist.comments === 1 ? 'comment' : 'comments'}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="gist-languages">
-                    <strong>Languages:</strong> {getFileLanguages(gist.files)}
-                  </div>
-                </div>
-
-                <div className="gist-files">
-                  <strong>Files:</strong>
-                  <ul className="file-list">
-                    {gist.files.slice(0, 3).map((file, index) => (
-                      <li key={index} className="file-item">
-                        <span className="filename">{file.filename}</span>
-                        {file.language && (
-                          <span className="file-language">({file.language})</span>
-                        )}
-                      </li>
-                    ))}
-                    {gist.files.length > 3 && (
-                      <li className="file-item more-files">
-                        +{gist.files.length - 3} more files
-                      </li>
-                    )}
-                  </ul>
-                </div>
-
-                <div className="gist-dates">
-                  <div className="date-info">
-                    <strong>Created:</strong> {formatDate(gist.created_at)}
-                  </div>
-                  <div className="date-info">
-                    <strong>Updated:</strong> {formatDate(gist.updated_at)}
-                  </div>
-                </div>
-
-                <div className="gist-actions">
-                  <a href={gist.html_url || '#'} target="_blank" rel="noopener noreferrer" className="action-link">
-                    View on GitHub
-                  </a>
-                  {gist.git_pull_url && (
-                    <button
-                      onClick={() => navigator.clipboard.writeText(gist.git_pull_url || '')}
-                      className="action-button"
-                      title="Copy clone URL"
-                    >
-                      Copy Clone URL
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
+          {/* Pagination controls above the table */}
           {totalPages > 1 && (
             <div className="pagination">
-              <button
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page === 1}
-                className="pagination-button"
-              >
-                Previous
-              </button>
-              
               <div className="pagination-info">
-                Page {page} of {totalPages} ({totalCount} total gists)
+                Showing {((page - 1) * 20) + 1} to {Math.min(page * 20, totalCount)} of {totalCount} gists
+                {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
               </div>
               
-              <button
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page === totalPages}
-                className="pagination-button"
-              >
-                Next
-              </button>
+              <div className="pagination-controls">
+                <button 
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className="page-btn first-btn"
+                >
+                  First
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="page-btn"
+                >
+                  Previous
+                </button>
+                
+                <div className="page-numbers">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`page-btn ${page === pageNum ? 'active' : ''}`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button 
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page === totalPages}
+                  className="page-btn"
+                >
+                  Next
+                </button>
+                <button 
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  className="page-btn last-btn"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="gists-table-container">
+            <table className="gists-table">
+              <thead>
+                <tr>
+                  <th className="gist-description-cell">
+                    <span>Description</span>
+                  </th>
+                  <th className="gist-visibility-cell">
+                    <span>Visibility</span>
+                  </th>
+                  <th className="gist-files-cell">
+                    <span>Files</span>
+                  </th>
+                  <th className="gist-languages-cell">
+                    <span>Languages</span>
+                  </th>
+                  <th className="gist-comments-cell">
+                    <span>💬</span>
+                  </th>
+                  <th className="gist-updated-cell">
+                    <span>Updated</span>
+                  </th>
+                  <th className="gist-actions-cell">
+                    <span>Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {gists.map((gist) => (
+                  <tr key={gist.id}>
+                    <td className="gist-description-cell">
+                      <div className="gist-description-container">
+                        <a 
+                          href={gist.html_url || '#'} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="gist-description-link"
+                        >
+                          {gist.description || 'Untitled Gist'}
+                        </a>
+                        <div className="gist-id">
+                          ID: {gist.id}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="gist-visibility-cell">
+                      <span className={`visibility-badge ${gist.public ? 'public' : 'private'}`}>
+                        {gist.public ? 'Public' : 'Private'}
+                      </span>
+                    </td>
+                    <td className="gist-files-cell">
+                      <div className="files-info">
+                        <span className="file-count">
+                          {gist.file_count} {gist.file_count === 1 ? 'file' : 'files'}
+                        </span>
+                        {gist.files.length > 0 && (
+                          <div className="file-list-compact">
+                            {gist.files.slice(0, 2).map((file, index) => (
+                              <span key={index} className="file-name-compact">
+                                {file.filename}
+                              </span>
+                            ))}
+                            {gist.files.length > 2 && (
+                              <span className="more-files-compact">
+                                +{gist.files.length - 2} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="gist-languages-cell">
+                      <div className="languages-info">
+                        {getFileLanguages(gist.files)}
+                      </div>
+                    </td>
+                    <td className="gist-comments-cell">
+                      {gist.comments > 0 ? (
+                        <span className="comment-count">{gist.comments}</span>
+                      ) : (
+                        <span className="no-comments">-</span>
+                      )}
+                    </td>
+                    <td className="gist-updated-cell">
+                      <div className="date-info">
+                        <div className="updated-date">
+                          {formatDate(gist.updated_at)}
+                        </div>
+                        <div className="created-date">
+                          Created: {formatDate(gist.created_at)}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="gist-actions-cell">
+                      <div className="action-buttons">
+                        <a 
+                          href={gist.html_url || '#'} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="action-btn view-btn"
+                          title="View on GitHub"
+                        >
+                          View
+                        </a>
+                        {gist.git_pull_url && (
+                          <button
+                            onClick={() => navigator.clipboard.writeText(gist.git_pull_url || '')}
+                            className="action-btn copy-btn"
+                            title="Copy clone URL"
+                          >
+                            Copy URL
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination controls below the table */}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <div className="pagination-info">
+                Showing {((page - 1) * 20) + 1} to {Math.min(page * 20, totalCount)} of {totalCount} gists
+                {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
+              </div>
+              
+              <div className="pagination-controls">
+                <button 
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className="page-btn first-btn"
+                >
+                  First
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="page-btn"
+                >
+                  Previous
+                </button>
+                
+                <div className="page-numbers">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`page-btn ${page === pageNum ? 'active' : ''}`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button 
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page === totalPages}
+                  className="page-btn"
+                >
+                  Next
+                </button>
+                <button 
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  className="page-btn last-btn"
+                >
+                  Last
+                </button>
+              </div>
             </div>
           )}
         </>

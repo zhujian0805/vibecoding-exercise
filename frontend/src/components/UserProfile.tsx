@@ -13,6 +13,7 @@ interface User {
   twitter_username: string;
   public_repos: number;
   total_repos: number;
+  total_gists: number;
   followers: number;
   following: number;
   created_at: string;
@@ -123,6 +124,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, onRefreshProfile }) => 
           >
             <strong>{(user.total_repos ?? 0).toLocaleString()}</strong>
             <span>REPOSITORIES</span>
+          </div>
+          <div 
+            className="stat clickable-stat"
+            onClick={() => navigate('/gists')}
+            title="View gists"
+          >
+            <strong>{(user.total_gists ?? 0).toLocaleString()}</strong>
+            <span>GISTS</span>
           </div>
           <div 
             className="stat clickable-stat"

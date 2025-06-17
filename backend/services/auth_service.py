@@ -88,7 +88,15 @@ class GitHubAuthStrategy(AuthenticationStrategy):
                 logger.warning(f"Failed to fetch total repo count: {e}")
                 total_repos = github_user.public_repos
             
-            return User.from_github_user(github_user, total_repos)
+            # Get total gist count
+            try:
+                gist_list = github_user.get_gists()
+                total_gists = gist_list.totalCount
+            except Exception as e:
+                logger.warning(f"Failed to fetch total gist count: {e}")
+                total_gists = 0
+            
+            return User.from_github_user(github_user, total_repos, total_gists)
             
         except GithubException as e:
             logger.error(f"GitHub API error: {e}")
