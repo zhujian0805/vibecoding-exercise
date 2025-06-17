@@ -1,46 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-
-interface Repository {
-  id: number;
-  name: string;
-  full_name: string;
-  description: string;
-  private: boolean;
-  html_url: string;
-  clone_url: string;
-  ssh_url: string;
-  language: string;
-  stargazers_count: number;
-  watchers_count: number;
-  forks_count: number;
-  size: number;
-  default_branch: string;
-  created_at: string;
-  updated_at: string;
-  pushed_at: string;
-  archived: boolean;
-  disabled: boolean;
-  fork: boolean;
-  topics: string[];
-  visibility: string;
-}
-
-interface RepositoriesResponse {
-  repositories: Repository[];
-  page: number;
-  per_page: number;
-  total_count: number;
-  total_pages: number;
-  has_next: boolean;
-  has_prev: boolean;
-  search_query: string;
-  table_sort?: string;
-  table_sort_direction?: string;
-}
-
-type SortField = 'name' | 'language' | 'stargazers_count' | 'forks_count' | 'size' | 'updated_at';
-type SortDirection = 'asc' | 'desc';
+import RepositorySearch from './repositories/RepositorySearch';
+import RepositoryControls from './repositories/RepositoryControls';
+import RepositoryTableHeader from './repositories/RepositoryTableHeader';
+import RepositoryTableRow from './repositories/RepositoryTableRow';
+import RepositoryPagination from './repositories/RepositoryPagination';
+import { getLanguageColor, formatDate, copyToClipboard } from './repositories/utils';
+import {
+  Repository,
+  RepositoriesResponse,
+  SortField,
+  SortState,
+  PaginationState,
+} from './repositories/types';
 
 const API_BASE_URL = 'http://localhost:5000';
 
