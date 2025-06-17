@@ -10,6 +10,7 @@ import {
   Repository,
   RepositoriesResponse,
   SortField,
+  SortDirection,
   SortState,
   PaginationState,
 } from './repositories/types';
