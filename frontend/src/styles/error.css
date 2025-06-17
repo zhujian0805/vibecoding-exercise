@@ -45,26 +45,7 @@
   margin: var(--spacing-lg);
 }
 
-.no-repositories {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  background-color: var(--surface-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
-  border: 1px solid var(--outline-variant);
-}
 
-.no-repositories h3 {
-  color: var(--on-surface);
-  margin-bottom: var(--spacing-md);
-  font-size: var(--font-size-xl);
-}
-
-.no-repositories p {
-  color: var(--on-surface-variant);
-  font-size: var(--font-size-large);
-  margin: 0;
-}
 
 .empty-state {
   text-align: center;
