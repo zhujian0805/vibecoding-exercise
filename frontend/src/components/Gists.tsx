@@ -159,7 +159,7 @@ const Gists: React.FC = () => {
   return (
     <div className="gists-container">
       <div className="gists-header">
-        <h2>My Gists</h2>
+        <h2>Gists</h2>
         <p>Your GitHub gists ({totalCount} total)</p>
       </div>
 

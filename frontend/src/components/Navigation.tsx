@@ -33,7 +33,7 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
           {isAuthenticated && (
             <>
               <li className={location.pathname === '/profile' ? 'active' : ''}>
-                <Link to="/profile">User Profile</Link>
+                <Link to="/profile">Profile</Link>
               </li>
               <li className={location.pathname === '/repositories' ? 'active' : ''}>
                 <Link to="/repositories">Repositories</Link>
@@ -45,7 +45,7 @@ const Navigation: React.FC<NavigationProps> = ({ isAuthenticated, user, onLogout
                 <Link to="/followers">Followers</Link>
               </li>
               <li className={location.pathname === '/gists' ? 'active' : ''}>
-                <Link to="/gists">My Gists</Link>
+                <Link to="/gists">Gists</Link>
               </li>
             </>
           )}

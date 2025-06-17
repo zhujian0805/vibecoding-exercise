@@ -64,7 +64,7 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
         <h2>Features</h2>
         <div className="features-grid">
           <Link to="/profile" className="feature-card">
-            <h3>User Profile</h3>
+            <h3>Profile</h3>
             <p>View your GitHub profile information, including bio, location, and social links.</p>
           </Link>
           <Link to="/repositories" className="feature-card">
