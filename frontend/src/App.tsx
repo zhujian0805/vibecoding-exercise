@@ -12,6 +12,7 @@ import Repositories from './components/Repositories';
 import Following from './components/Following';
 import Followers from './components/Followers';
 import Gists from './components/Gists';
+import PullRequests from './components/PullRequests';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -260,6 +261,14 @@ function App() {
                 element={
                   <ProtectedRoute isAuthenticated={authState.authenticated}>
                     <Gists />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/pullrequests" 
+                element={
+                  <ProtectedRoute isAuthenticated={authState.authenticated}>
+                    <PullRequests />
                   </ProtectedRoute>
                 } 
               />

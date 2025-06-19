@@ -3,6 +3,7 @@
   /* Google Colors - Light Theme */
   --primary-color: #1a73e8;
   --primary-hover: #1557b0;
+  --primary-dark: #1557b0;
   --primary-light: #e8f0fe;
   --surface-color: #ffffff;
   --surface-variant: #f8f9fa;
@@ -23,9 +24,11 @@
   
   /* Typography */
   --font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
   --font-size-small: 0.875rem;
   --font-size-base: 1rem;
   --font-size-large: 1.125rem;
+  --font-size-lg: 1.125rem;
   --font-size-xl: 1.5rem;
   --font-size-2xl: 2rem;
   
@@ -48,6 +51,7 @@
 [data-theme="dark"] {
   --primary-color: #8ab4f8;
   --primary-hover: #aecbfa;
+  --primary-dark: #669df6;
   --primary-light: #1e3a8a;
   --surface-color: #202124;
   --surface-variant: #28292d;

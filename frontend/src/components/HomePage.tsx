@@ -83,6 +83,10 @@ const HomePage: React.FC<HomePageProps> = ({ user }) => {
             <h3>Followers</h3>
             <p>View your GitHub followers and see who's interested in your work.</p>
           </Link>
+          <Link to="/pullrequests" className="feature-card">
+            <h3>Pull Requests</h3>
+            <p>Manage your GitHub pull requests across all repositories.</p>
+          </Link>
           <div className="feature-card">
             <h3>OAuth Flow</h3>
             <p>Secure authentication using GitHub's OAuth 2.0 flow.</p>
