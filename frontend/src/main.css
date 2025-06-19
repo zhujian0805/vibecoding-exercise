@@ -28,7 +28,6 @@
 @import './styles/repository-table-cells.css';
 @import './styles/gists.css';
 @import './styles/followers.css';
-@import './styles/pullrequests.css';
 
 /* Utilities */
 @import './styles/utilities.css';
