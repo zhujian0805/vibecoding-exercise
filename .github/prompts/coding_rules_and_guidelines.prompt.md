@@ -1,3 +1,7 @@
+---
+mode: 'agent'
+---
+
 # Coding Rules and Guidelines
 - After making changes, ALWAYS make sure to start up a new server so I can test it.
 - Always look for existing code to iterate on instead of creating new code.

@@ -1,3 +1,7 @@
+---
+mode: 'agent'
+---
+
 # Efficient Single Cache Implementation for OAuth Backend
 
 ## Overview

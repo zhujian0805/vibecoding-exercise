@@ -1,3 +1,7 @@
+---
+mode: 'agent'
+---
+
 # Security Best Practices
 
 ## 1. Validate Inputs

@@ -1,4 +1,5 @@
 ---
+mode: 'agent'
 description: React best practices and patterns for modern web applications
 globs: **/*.tsx, **/*.jsx, components/**/*
 ---

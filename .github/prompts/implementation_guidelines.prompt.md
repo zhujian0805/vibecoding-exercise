@@ -1,3 +1,7 @@
+---
+mode: 'agent'
+---
+
 # 🚀 Implementation Guide
 
 ## Overview
