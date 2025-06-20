@@ -10,15 +10,15 @@ This guide provides step-by-step instructions for implementing new features in t
 
 ## 📋 Table of Contents
 
-- [Architecture Overview](#architecture-overview)
-- [Development Environment Setup](#development-environment-setup)
-- [Feature Implementation Process](#feature-implementation-process)
-- [Backend Implementation](#backend-implementation)
-- [Frontend Implementation](#frontend-implementation)
-- [Testing Guidelines](#testing-guidelines)
-- [Best Practices](#best-practices)
-- [Example Implementation](#example-implementation)
-- [Troubleshooting](#troubleshooting)
+- Architecture Overview
+- Development Environment Setup  
+- Feature Implementation Process
+- Testing Guidelines
+- Best Practices
+- Example Implementation: GitHub Issues Feature
+- Troubleshooting
+- Additional Resources
+- Contributing
 
 ## 🏗️ Architecture Overview
 
