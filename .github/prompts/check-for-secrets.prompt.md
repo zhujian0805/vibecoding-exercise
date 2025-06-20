@@ -1,3 +1,7 @@
+---
+mode: 'agent'
+---
+
 # 🔐 Prompt: Hardcoded Secrets & Credential Audit
 
 Act as a secure code reviewer analyzing this file for **hardcoded secrets**, API keys, tokens, credentials, or other sensitive information.

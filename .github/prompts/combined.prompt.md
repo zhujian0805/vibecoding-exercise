@@ -33,6 +33,9 @@ This combined prompt includes all coding standards, best practices, and guidelin
 ### Security Best Practices
 #file:./security_best_practices.prompt.md
 
+### Secret Detection Guidelines
+#file:./check-for-secrets.prompt.md
+
 ### Cache Implementation Guidelines
 #file:./cache_implementation_guidelines.prompt.md
 
