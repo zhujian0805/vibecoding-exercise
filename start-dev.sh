@@ -28,7 +28,7 @@ echo "✅ Environment variables configured"
 
 # Start backend in background
 echo "🐍 Starting Flask backend on port 5000..."
-cd /home/jzhu/projects/repos/learn-oauth-flow/backend
+cd /home/jzhu/projects/repos/vibecoding-exercise/backend
 python oauth_backend.py &
 BACKEND_PID=$!
 
@@ -37,7 +37,7 @@ sleep 3
 
 # Start frontend
 echo "⚛️  Starting React frontend on port 80..."
-cd /home/jzhu/projects/repos/learn-oauth-flow/frontend
+cd /home/jzhu/projects/repos/vibecoding-exercise/frontend
 
 # Check if we need to install dependencies
 if [ ! -d "node_modules" ]; then
@@ -71,3 +71,4 @@ trap cleanup SIGINT SIGTERM
 
 # Wait for user to interrupt
 wait
+# Contains AI-generated edits.

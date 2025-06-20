@@ -95,7 +95,7 @@ A complete OAuth authentication demo with a Flask backend and React frontend, sh
 ## Project Structure
 
 ```
-learn-oauth-flow/
+vibecoding-exercise/
 ├── oauth_backend.py       # Flask backend server
 ├── requirements.txt       # Python dependencies
 ├── start-demo.sh         # Launch script
