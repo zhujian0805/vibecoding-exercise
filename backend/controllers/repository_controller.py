@@ -23,6 +23,7 @@ class RepositoryController:
     def _register_routes(self):
         """Register all repository routes"""
         self.blueprint.add_url_rule('/api/repositories', 'repositories', self.repositories, methods=['GET'])
+        self.blueprint.add_url_rule('/api/repositories/<owner>/<repo>', 'repository_details', self.repository_details, methods=['GET'])
         self.blueprint.add_url_rule('/api/debug/simple-repos', 'debug_simple_repos', self.debug_simple_repos, methods=['GET'])
     
     def _check_authentication(self):
@@ -207,3 +208,40 @@ class RepositoryController:
             
         except Exception as e:
             return jsonify({'error': f'Failed to fetch simple repos: {str(e)}'}), 500
+    
+    def repository_details(self, owner, repo):
+        """Get details of a single repository"""
+        logger.debug(f"/api/repositories/{owner}/{repo} called from {request.remote_addr}")
+        
+        # Check authentication
+        user, access_token, error_response, error_code = self._check_authentication()
+        if error_response:
+            return error_response, error_code
+        
+        user_id = user.get('id')
+        logger.debug(f"User ID: {user_id}")
+        
+        try:
+            # Check rate limit
+            if not self._check_rate_limit(access_token, user_id):
+                return jsonify({'error': 'Rate limit too low, please try again later'}), 429
+            
+            # Create repository service and fetch data
+            repo_repository = RepositoryRepository(access_token)
+            repo_service = RepositoryService(repo_repository)
+            
+            # Get repository details
+            repository = repo_service.get_repository_details(owner, repo)
+            if not repository:
+                return jsonify({'error': 'Repository not found'}), 404
+            
+            # Convert to dictionary for JSON response
+            repo_dict = repository.to_dict()
+            
+            logger.debug(f"Repository details fetched: {repo_dict['full_name']}")
+            return jsonify(repo_dict)
+            
+        except Exception as e:
+            error_msg = f'Failed to fetch repository details: {str(e)}'
+            logger.error(f"Exception in repository_details endpoint: {error_msg}")
+            return jsonify({'error': error_msg}), 500
