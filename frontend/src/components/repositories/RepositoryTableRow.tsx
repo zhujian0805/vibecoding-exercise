@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Repository } from './types';
 
 interface RepositoryTableRowProps {
@@ -89,13 +88,6 @@ const RepositoryTableRow: React.FC<RepositoryTableRowProps> = ({
       
       <td className="actions-cell">
         <div className="repo-actions">
-          <Link 
-            to={`/repositories/${repo.full_name.split('/')[0]}/${repo.name}`}
-            className="action-btn view-btn"
-            title="View repository details"
-          >
-            View
-          </Link>
           <a 
             href={repo.html_url} 
             target="_blank" 

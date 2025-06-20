@@ -23,7 +23,6 @@ class RepositoryController:
     def _register_routes(self):
         """Register all repository routes"""
         self.blueprint.add_url_rule('/api/repositories', 'repositories', self.repositories, methods=['GET'])
-        self.blueprint.add_url_rule('/api/repositories/<owner>/<repo>', 'repository_detail', self.repository_detail, methods=['GET'])
         self.blueprint.add_url_rule('/api/debug/simple-repos', 'debug_simple_repos', self.debug_simple_repos, methods=['GET'])
     
     def _check_authentication(self):
@@ -208,82 +207,3 @@ class RepositoryController:
             
         except Exception as e:
             return jsonify({'error': f'Failed to fetch simple repos: {str(e)}'}), 500
-
-    def repository_detail(self, owner: str, repo: str):
-        """Get detailed information for a specific repository"""
-        user, access_token, error_response, error_code = self._check_authentication()
-        if error_response:
-            return error_response, error_code
-
-        try:
-            start_time = time.time()
-            
-            # Check rate limit
-            user_id = user.get('id') if user else None
-            if user_id and not self._check_rate_limit(access_token, user_id):
-                return jsonify({'error': 'GitHub API rate limit exceeded. Please try again later.'}), 429
-            
-            github_client = Github(access_token)
-            
-            # Get the repository
-            try:
-                repository = github_client.get_repo(f"{owner}/{repo}")
-            except Exception as e:
-                logger.error(f"Failed to get repository {owner}/{repo}: {e}")
-                if "404" in str(e):
-                    return jsonify({'error': 'Repository not found'}), 404
-                else:
-                    return jsonify({'error': 'Failed to access repository'}), 403
-            
-            # Convert to dictionary format
-            repo_dict = {
-                'id': repository.id,
-                'name': repository.name,
-                'full_name': repository.full_name,
-                'description': repository.description,
-                'private': repository.private,
-                'html_url': repository.html_url,
-                'clone_url': repository.clone_url,
-                'ssh_url': repository.ssh_url,
-                'git_url': repository.git_url,
-                'svn_url': repository.svn_url,
-                'homepage': repository.homepage,
-                'language': repository.language,
-                'stargazers_count': repository.stargazers_count,
-                'watchers_count': repository.watchers_count,
-                'forks_count': repository.forks_count,
-                'open_issues_count': repository.open_issues_count,
-                'size': repository.size,
-                'default_branch': repository.default_branch,
-                'created_at': repository.created_at.isoformat() if repository.created_at else None,
-                'updated_at': repository.updated_at.isoformat() if repository.updated_at else None,
-                'pushed_at': repository.pushed_at.isoformat() if repository.pushed_at else None,
-                'archived': repository.archived,
-                'disabled': getattr(repository, 'disabled', False),
-                'fork': repository.fork,
-                'topics': repository.get_topics(),
-                'visibility': 'private' if repository.private else 'public',
-                'license': {
-                    'key': repository.license.key,
-                    'name': repository.license.name,
-                    'spdx_id': repository.license.spdx_id,
-                    'url': repository.license.url
-                } if hasattr(repository, 'license') and repository.license else None,
-                'owner': {
-                    'login': repository.owner.login,
-                    'avatar_url': repository.owner.avatar_url,
-                    'html_url': repository.owner.html_url
-                }
-            }
-            
-            end_time = time.time()
-            processing_time = end_time - start_time
-            
-            logger.debug(f"Repository details fetched for {owner}/{repo} in {processing_time:.2f}s")
-            
-            return jsonify(repo_dict)
-            
-        except Exception as e:
-            error_msg = f'Failed to fetch repository details: {str(e)}'
-            logger.error(f"Exception in repository_detail endpoint: {error_msg}")
-            return jsonify({'error': error_msg}), 500
