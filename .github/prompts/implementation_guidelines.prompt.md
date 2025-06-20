@@ -23,7 +23,7 @@ This guide provides step-by-step instructions for implementing new features in t
 ## 🏗️ Architecture Overview
 
 ### Backend Architecture (Flask + Python)
-```
+```text
 backend/
 ├── app_factory.py          # Application factory with dependency injection
 ├── config.py               # Configuration management
@@ -35,7 +35,7 @@ backend/
 ```
 
 ### Frontend Architecture (React + TypeScript)
-```
+```text
 frontend/src/
 ├── App.tsx                 # Main application component
 ├── components/             # Reusable UI components
@@ -710,5 +710,7 @@ When contributing new features:
 
 ---
 
-**Last Updated**: June 17, 2025
+**Last Updated**: June 20, 2025
 **Version**: 1.0.0
+
+<!-- Contains AI-generated edits. -->
