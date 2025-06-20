@@ -9,6 +9,7 @@ import HomePage from './components/HomePage';
 import LoginPage from './components/LoginPage';
 import UserProfile from './components/UserProfile';
 import Repositories from './components/Repositories';
+import RepositoryDetail from './components/RepositoryDetail';
 import Following from './components/Following';
 import Followers from './components/Followers';
 import Gists from './components/Gists';
@@ -236,6 +237,14 @@ function App() {
                 element={
                   <ProtectedRoute isAuthenticated={authState.authenticated}>
                     <Repositories />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/repositories/:owner/:repo" 
+                element={
+                  <ProtectedRoute isAuthenticated={authState.authenticated}>
+                    <RepositoryDetail />
                   </ProtectedRoute>
                 } 
               />
